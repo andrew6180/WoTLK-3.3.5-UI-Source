@@ -74,23 +74,20 @@ do
 end
 
 function IsFrameHandle(handle, protected)
-    local handle = LOCAL_FrameHandle_Protected_Frames[handle];
-    if ((handle == nil) and not protected) then
-        handle = LOCAL_FrameHandle_Other_Frames[handle];
+    local surrogate = LOCAL_FrameHandle_Protected_Frames[handle];
+    if ((surrogate == nil) and not protected) then
+        surrogate = LOCAL_FrameHandle_Other_Frames[handle];
     end
-    return (handle ~= nil);
+    return (surrogate ~= nil);
 end
 
 function GetFrameHandleFrame(handle, protected)
-    local handle = LOCAL_FrameHandle_Protected_Frames[handle];
-    if (handle ~= nil) then
-        return handle[1];
+    local surrogate = LOCAL_FrameHandle_Protected_Frames[handle];
+    if ((surrogate == nil) and (not protected or not InCombatLockdown())) then
+        surrogate = LOCAL_FrameHandle_Other_Frames[handle];
     end
-    if (not protected or not InCombatLockdown()) then
-        handle = LOCAL_FrameHandle_Other_Frames[handle];
-        if (handle ~= nil) then
-            return handle[1];
-        end
+    if (surrogate ~= nil) then
+        return surrogate[1];
     end
 end
 
@@ -172,7 +169,9 @@ function HANDLE:GetScale()  return GetHandleFrame(self):GetScale()  end
 function HANDLE:GetEffectiveScale()
     return GetHandleFrame(self):GetEffectiveScale()
 end
+
 -- Cannot expose GetAlpha since alpha is not protected
+
 function HANDLE:GetFrameLevel()
     return GetHandleFrame(self):GetFrameLevel()  end
 function HANDLE:GetObjectType()
@@ -245,8 +244,7 @@ function HANDLE:GetEffectiveAttribute(name, button, prefix, suffix)
 end
 
 
-local FrameHandleMapper;
-function FrameHandleMapper(nolockdown, frame, nextFrame, ...)
+local function FrameHandleMapper(nolockdown, frame, nextFrame, ...)
     if (not frame) then
         return;
     end
@@ -254,7 +252,7 @@ function FrameHandleMapper(nolockdown, frame, nextFrame, ...)
     -- the frame handle lookup
     local p = nolockdown;
     if (not p) then
-        local p = frame:IsProtected();
+        p = frame:IsProtected();
     end
     if (p) then
         frame = LOCAL_FrameHandle_Lookup[frame];
@@ -330,8 +328,7 @@ end
 -- Used only for recursive check, since it's more expensive
 --
 -- Only check protected and visible children
-local RF_CheckUnderMouse;
-function RF_CheckUnderMouse(x, y, ...)
+local function RF_CheckUnderMouse(x, y, ...)
     for i = 1, select('#', ...) do
         local frame = select(i, ...);
         if (frame and frame:IsProtected() and frame:IsVisible()) then
@@ -355,17 +352,33 @@ function HANDLE:IsUnderMouse(recursive)
     local frame = GetHandleFrame(self);
     local x, y = GetCursorPosition();
     local l, b, w, h = frame:GetRect()
-    if (not w or not h) then return nil; end
-    local e = frame:GetEffectiveScale();
-    local fx = x / e - l;
-    if ((fx >= 0) and (fx <= w)) then
-        local fy = y / e - b;
-        if ((fy >= 0) and (fy <= h)) then return true; end
+    if (w and h) then
+        local e = frame:GetEffectiveScale();
+        local fx = x / e - l;
+        if ((fx >= 0) and (fx <= w)) then
+            local fy = y / e - b;
+            if ((fy >= 0) and (fy <= h)) then return true; end
+        end
     end
     if (not recursive) then
         return;
     end
     return RF_CheckUnderMouse(x, y, frame:GetChildren());
+end
+
+function HANDLE:GetNumPoints()
+    return GetHandleFrame(self):GetNumPoints();
+end
+
+function HANDLE:GetPoint(i)
+    local point, frame, relative, dx, dy = GetHandleFrame(self):GetPoint(i);
+    local handle;
+    if (frame) then
+        handle = FrameHandleMapper(not InCombatLockdown(), frame);
+    end
+    if (handle or not frame) then
+        return point, handle, relative, dx, dy;
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -598,4 +611,48 @@ function HANDLE:SetParent(handle)
     end
 
     GetHandleFrame(self):SetParent(parent);
+end
+
+function HANDLE:RegisterAutoHide(duration)
+    RegisterAutoHide(GetHandleFrame(self), tonumber(duration));
+end
+
+function HANDLE:UnregisterAutoHide()
+    UnregisterAutoHide(GetHandleFrame(self));
+end
+
+function HANDLE:AddToAutoHide(handle)
+    if (type(handle) ~= "userdata") then
+        error("Invalid frame handle for AddToAutoHide");
+        return;
+    end
+
+    local child = LOCAL_FrameHandle_Protected_Frames[handle];
+    if (not child) then
+        error("Invalid frame handle for AddToAutoHide");
+        return;
+    end
+
+    AddToAutoHide(GetHandleFrame(self), child);
+end
+
+---------------------------------------------------------------------------
+-- Type specific methods
+
+function HANDLE:Disable()
+    local frame = GetHandleFrame(self);
+    if (not frame:IsObjectType("Button")) then
+        error("Frame is not a Button");
+        return;
+    end
+    frame:Disable();
+end
+
+function HANDLE:Enable()
+    local frame = GetHandleFrame(self);
+    if (not frame:IsObjectType("Button")) then
+        error("Frame is not a Button");
+        return;
+    end
+    frame:Enable();
 end

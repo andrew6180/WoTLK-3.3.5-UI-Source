@@ -3,6 +3,12 @@
 --PET_FLASH_OFF_TIME = 0.5;
 
 function PetFrame_OnLoad (self)
+	self.noTextPrefix = true;
+	UnitFrame_Initialize(self, "pet", PetName, PetPortrait,
+						 PetFrameHealthBar, PetFrameHealthBarText, 
+						 PetFrameManaBar, PetFrameManaBarText,
+						 PetFrameFlash);
+
 	self.attackModeCounter = 0;
 	self.attackModeSign = -1;
 	--self.flashState = 1;
@@ -17,35 +23,42 @@ function PetFrame_OnLoad (self)
 	self:RegisterEvent("UNIT_HAPPINESS");
 	self:RegisterEvent("PET_UI_UPDATE");
 	self:RegisterEvent("PET_RENAMEABLE");
-	self:RegisterEvent("UNIT_ENTERED_VEHICLE");
-	self:RegisterEvent("UNIT_EXITING_VEHICLE");
 	local showmenu = function()
 		ToggleDropDownMenu(1, nil, PetFrameDropDown, "PetFrame", 44, 8);
 	end
 	SecureUnitButton_OnLoad(self, "pet", showmenu);
+	
+	local _, class = UnitClass("player");
+	if ( class == "DEATHKNIGHT"  or class == "DRUID" ) then	--Death Knights need the Pet frame moved down for their Runes and Druids need it moved down for the secondary power bar.
+		self:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 60, -75);
+	elseif ( class == "SHAMAN" ) then
+		self:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 60, -100);
+	end
 end
 
-function PetFrame_Update (self)
-	if ( UnitIsVisible(self.unit) ) then
-		if ( self:IsShown() ) then
-			UnitFrame_Update(self);
-		else
-			self:Show();
-		end
-		--self.flashState = 1;
-		--self.flashTimer = PET_FLASH_ON_TIME;
-		if ( UnitPowerMax(self.unit) == 0 ) then
-			PetFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-SmallTargetingFrame-NoMana");
-			PetFrameManaBarText:Hide();
-		else
-			PetFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-SmallTargetingFrame");
-		end
-		PetAttackModeTexture:Hide();
+function PetFrame_Update (self, override)
+	if ( (not PlayerFrame.animating) or (override) ) then
+		if ( UnitIsVisible(self.unit) ) then
+			if ( self:IsShown() ) then
+				UnitFrame_Update(self);
+			else
+				self:Show();
+			end
+			--self.flashState = 1;
+			--self.flashTimer = PET_FLASH_ON_TIME;
+			if ( UnitPowerMax(self.unit) == 0 ) then
+				PetFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-SmallTargetingFrame-NoMana");
+				PetFrameManaBarText:Hide();
+			else
+				PetFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-SmallTargetingFrame");
+			end
+			PetAttackModeTexture:Hide();
 
-		PetFrame_SetHappiness(self);
-		RefreshBuffs(self, 0, self.unit);
-	else
-		self:Hide();
+			PetFrame_SetHappiness(self);
+			RefreshDebuffs(self, self.unit);
+		else
+			self:Hide();
+		end
 	end
 end
 
@@ -68,7 +81,7 @@ function PetFrame_OnEvent (self, event, ...)
 		end
 	elseif ( event == "UNIT_AURA" ) then
 		if ( arg1 == self.unit ) then
-			RefreshBuffs(self, 0, self.unit);
+			RefreshDebuffs(self, self.unit);
 		end
 	elseif ( event == "PET_ATTACK_START" ) then
 		PetAttackModeTexture:SetVertexColor(1.0, 1.0, 1.0, 1.0);
@@ -79,23 +92,6 @@ function PetFrame_OnEvent (self, event, ...)
 		PetFrame_SetHappiness(self);
 	elseif ( event == "PET_RENAMEABLE" ) then
 		StaticPopup_Show("RENAME_PET");
-	elseif ( event == "UNIT_ENTERED_VEHICLE" ) then
-		if ( arg1 == "player" ) then
-			local unit;
-			local showVehicleUI = arg2;
-			if ( showVehicleUI ) then
-				unit = "player";
-			else
-				unit = "pet";
-			end
-			UnitFrame_SetUnit(self, unit, PetFrameHealthBar, PetFrameManaBar);
-			PetFrame_Update(self);
-		end
-	elseif ( event == "UNIT_EXITING_VEHICLE" ) then
-		if ( arg1 == "player" ) then
-			UnitFrame_SetUnit(self, "pet", PetFrameHealthBar, PetFrameManaBar);
-			PetFrame_Update(self);
-		end
 	end
 end
 
@@ -160,7 +156,7 @@ function PetFrame_SetHappiness ()
 	elseif ( happiness == 3 ) then
 		PetFrameHappinessTexture:SetTexCoord(0, 0.1875, 0, 0.359375);
 	end
-	PetFrameHappiness.tooltip = getglobal("PET_HAPPINESS"..happiness);
+	PetFrameHappiness.tooltip = _G["PET_HAPPINESS"..happiness];
 	PetFrameHappiness.tooltipDamage = format(PET_DAMAGE_PERCENTAGE, damagePercentage);
 end
 
@@ -173,13 +169,17 @@ function PetFrameDropDown_Initialize ()
 		if ( PetFrame.unit == "player" ) then
 			UnitPopup_ShowMenu(PetFrameDropDown, "SELF", "player");
 		else
-			UnitPopup_ShowMenu(PetFrameDropDown, "PET", "pet");
+			if ( UnitIsUnit("pet", "vehicle") ) then
+				UnitPopup_ShowMenu(PetFrameDropDown, "VEHICLE", "vehicle");
+			else
+				UnitPopup_ShowMenu(PetFrameDropDown, "PET", "pet");
+			end
 		end
 	end
 end
 
 function PetCastingBarFrame_OnLoad (self)
-	CastingBarFrame_OnLoad(self, "pet", false);
+	CastingBarFrame_OnLoad(self, "pet", false, false);
 
 	self:RegisterEvent("UNIT_PET");
 

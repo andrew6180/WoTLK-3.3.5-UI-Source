@@ -7,7 +7,7 @@ MovieVolumeList[1] = 100;
 --Burning Crusade
 MovieVolumeList[2] = 150;
 --Lich King
-MovieVolumeList[3] = 150;
+MovieVolumeList[3] = 250;
 
 MovieList = { };
 MovieList[1] = { };
@@ -93,7 +93,7 @@ function MovieFrame_PlayNextMovie(self)
 end
 
 function MovieFrame_OnShow(self)
-	self:EnableSubtitles(GetMovieSubtitles());
+	self:EnableSubtitles(GetCVarBool("movieSubtitle"));
 	HideCursor();
 	if ( GetMovieResolution() < 1024 ) then
 		self.resolution = 1;	-- Low resolution

@@ -169,8 +169,8 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
-				AddonList_SetSecurityIcon(getglobal(self:GetName().."UpdateIcon"), 4);
-				AddonList_SetSecurityIcon(getglobal(self:GetName().."UpdateIconHighlight"), 4);
+				AddonList_SetSecurityIcon(_G[self:GetName().."UpdateIcon"], 4);
+				AddonList_SetSecurityIcon(_G[self:GetName().."UpdateIconHighlight"], 4);
 			</OnLoad>
 			<OnEnter>
 				AddonTooltip:SetPoint("TOPRIGHT", self, "TOPLEFT", -14, 0);
@@ -351,8 +351,8 @@
 						</Layers>
 						<Scripts>
 							<OnLoad>
-								GlueDropDownMenu_SetSelectedValue(self, ALL);
 								GlueDropDownMenu_Initialize(self, AddonListCharacterDropDown_Initialize);
+								GlueDropDownMenu_SetSelectedValue(self, ALL);
 							</OnLoad>
 						</Scripts>
 					</Frame>

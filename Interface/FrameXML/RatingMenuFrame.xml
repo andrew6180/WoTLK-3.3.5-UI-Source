@@ -1,6 +1,5 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
-	<Script file="UIParent.lua"/>
 	<Frame name="RatingMenuFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent">
 		<Size>
 			<AbsDimension x="288" y="224"/>
@@ -62,23 +61,13 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<Texture name="RatingMenuVerbal" file="Interface\Glues\Login\Glues-KoreanRating-Verbal.tga">
+				<Texture name="RatingMenuDrugs" file="Interface\Glues\Login\Glues-KoreanRating-Drugs.tga">
 					<Size>
 						<AbsDimension x="64" y="64"/>
 					</Size>
 					<Anchors>
-						<Anchor point="TOP" relativeTo="RatingMenuAge" relativePoint="BOTTOM">
-							<Offset x="0" y="-5"/>
-						</Anchor>
-					</Anchors>
-				</Texture>
-				<Texture name="RatingMenuFear" file="Interface\Glues\Login\Glues-KoreanRating-Fear.tga">
-					<Size>
-						<AbsDimension x="64" y="64"/>
-					</Size>
-					<Anchors>
-						<Anchor point="RIGHT" relativeTo="RatingMenuVerbal" relativePoint="LEFT">
-							<Offset x="0" y="0"/>
+						<Anchor point="BOTTOM">
+							<Offset x="32" y="40"/>
 						</Anchor>
 					</Anchors>
 				</Texture>
@@ -87,17 +76,7 @@
 						<AbsDimension x="64" y="64"/>
 					</Size>
 					<Anchors>
-						<Anchor point="RIGHT" relativeTo="RatingMenuFear" relativePoint="LEFT">
-							<Offset x="0" y="0"/>
-						</Anchor>
-					</Anchors>
-				</Texture>
-				<Texture name="RatingMenuSuggestive" file="Interface\Glues\Login\Glues-KoreanRating-Suggestive.tga">
-					<Size>
-						<AbsDimension x="64" y="64"/>
-					</Size>
-					<Anchors>
-						<Anchor point="RIGHT" relativeTo="RatingMenuViolence" relativePoint="LEFT">
+						<Anchor point="RIGHT" relativeTo="RatingMenuDrugs" relativePoint="LEFT">
 							<Offset x="0" y="0"/>
 						</Anchor>
 					</Anchors>
@@ -130,7 +109,7 @@
 				UpdateMicroButtons();
 			</OnHide>
 			<OnKeyDown>
-				if ( key == "ESCAPE" ) then
+				if ( GetBindingFromClick(key) == "TOGGLEGAMEMENU" ) then
 					PlaySound("gsTitleOptionExit");
 					HideUIPanel(RatingMenuFrame);
 					MacOptionsFrame_Cancel();

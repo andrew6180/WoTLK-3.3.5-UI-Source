@@ -33,8 +33,10 @@
 				self:RegisterEvent("BAG_UPDATE");
 				self.isBag = 1;
 				self.UpdateTooltip = BagSlotButton_OnEnter;
-				getglobal(self:GetName().."NormalTexture"):SetWidth(50);
-				getglobal(self:GetName().."NormalTexture"):SetHeight(50);
+				_G[self:GetName().."NormalTexture"]:SetWidth(50);
+				_G[self:GetName().."NormalTexture"]:SetHeight(50);
+				_G[self:GetName().."Count"]:SetPoint("BOTTOMRIGHT", -2, 2);
+				self.maxDisplayCount = 999;
 			</OnLoad>
 			<OnEvent>
 				if ( event == "BAG_UPDATE" ) then
@@ -57,13 +59,13 @@
 				end
 			</OnClick>
 			<OnDragStart>
-				BagSlotButton_OnDrag(self);
+				BagSlotButton_OnDrag(self, button);
 			</OnDragStart>
 			<OnReceiveDrag>
-				BagSlotButton_OnClick(self, button);
+				BagSlotButton_OnClick(self);
 			</OnReceiveDrag>
 			<OnEnter>
-				BagSlotButton_OnEnter(self);
+				BagSlotButton_OnEnter(self, motion);
 			</OnEnter>
 			<OnLeave>
 				GameTooltip:Hide();
@@ -109,9 +111,7 @@
 					BackpackButton_OnClick(self, button);
 				end
 			</OnClick>
-			<OnReceiveDrag>
-				BackpackButton_OnClick(self, button);
-			</OnReceiveDrag>
+			<OnReceiveDrag function="BackpackButton_OnClick"/>
 			<OnEnter>
 				GameTooltip:SetOwner(self, "ANCHOR_LEFT");
 				GameTooltip:SetText(BACKPACK_TOOLTIP, 1.0, 1.0, 1.0);
@@ -122,12 +122,8 @@
 				GameTooltip:AddLine(string.format(NUM_FREE_SLOTS, (self.freeSlots or 0)));
 				GameTooltip:Show();
 			</OnEnter>
-			<OnLeave>
-				GameTooltip:Hide();
-			</OnLeave>
-			<OnEvent>
-				MainMenuBarBackpackButton_OnEvent(self, event, ...);
-			</OnEvent>
+			<OnLeave function="GameTooltip_Hide"/>
+			<OnEvent function="MainMenuBarBackpackButton_OnEvent"/>
 		</Scripts>
 		<CheckedTexture alphaMode="ADD" file="Interface\Buttons\CheckButtonHilight"/>
 	</CheckButton>
@@ -209,9 +205,7 @@
 				GameTooltip:SetText(KEYRING, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
 				GameTooltip:AddLine();
 			</OnEnter>
-			<OnLeave>
-				GameTooltip:Hide();
-			</OnLeave>
+			<OnLeave function="GameTooltip_Hide"/>
 		</Scripts>
 		<NormalTexture file="Interface\Buttons\UI-Button-KeyRing">
 			<TexCoords left="0" right="0.5625" top="0" bottom="0.609375"/>

@@ -3,6 +3,10 @@ function OpenStackSplitFrame(maxStack, parent, anchor, anchorTo)
 	if ( StackSplitFrame.owner ) then
 		StackSplitFrame.owner.hasStackSplit = 0;
 	end
+	
+	if ( not maxStack ) then
+		maxStack = 0;
+	end
 
 	StackSplitFrame.maxStack = maxStack;
 	if ( StackSplitFrame.maxStack < 2 ) then
@@ -88,7 +92,7 @@ function StackSplitFrame_OnChar(self,text)
 end
 
 function StackSplitFrame_OnKeyDown(self,key)
-	numKey = gsub(key, "NUMPAD", "");
+	local numKey = gsub(key, "NUMPAD", "");
 	if ( key == "BACKSPACE" or key == "DELETE" ) then
 		if ( self.typing == 0 or self.split == 1 ) then
 			return;
@@ -110,7 +114,7 @@ function StackSplitFrame_OnKeyDown(self,key)
 		end
 	elseif ( key == "ENTER" ) then
 		StackSplitFrameOkay_Click();
-	elseif ( key == "ESCAPE" ) then
+	elseif ( GetBindingFromClick(key) == "TOGGLEGAMEMENU" ) then
 		StackSplitFrameCancel_Click();
 	elseif ( key == "LEFT" or key == "DOWN" ) then
 		StackSplitFrameLeft_Click();
@@ -126,7 +130,7 @@ function StackSplitFrame_OnKeyDown(self,key)
 end
 
 function StackSplitFrame_OnKeyUp(self,key)
-	numKey = gsub(key, "NUMPAD", "");
+	local numKey = gsub(key, "NUMPAD", "");
 	if ( not ( tonumber(numKey) ) and GetBindingAction(key) ) then
 		--If we don't run the up bindings as well, interesting things happen (like you never stop moving)
 		RunBinding(GetBindingAction(key), "up");

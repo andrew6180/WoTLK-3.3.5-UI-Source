@@ -38,7 +38,7 @@
 				GuildBankItemButton_OnLoad(self);
 			</OnLoad>
 			<OnEnter>
-				GuildBankItemButton_OnEnter(self);
+				GuildBankItemButton_OnEnter(self, motion);
 			</OnEnter>
 			<OnLeave>
 				self.updateTooltip = nil;
@@ -263,7 +263,7 @@
 	<CheckButton name="GuildBankPopupButtonTemplate" inherits="PopupButtonTemplate" virtual="true">
 		<Scripts>
 			<OnClick>
-				GuildBankPopupButton_OnClick(self, button);	
+				GuildBankPopupButton_OnClick(self, button, down);
 			</OnClick>
 		</Scripts>
 	</CheckButton>
@@ -412,102 +412,6 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<!--
-			<Button name="GBBackgroundLeft" inherits="UIPanelButtonTemplate" text="Lt">
-				<Size>
-					<AbsDimension x="30" y="21"/>
-				</Size>
-				<Anchors>
-					<Anchor point="TOP" relativeTo="UIParent">
-						<Offset x="0" y="0"/>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						GuildBankFrame_ChangeBackground(TABARDBACKGROUNDID-1);
-						debugprint(TABARDBACKGROUNDID);
-					</OnClick>
-				</Scripts>
-			</Button>
-			<Button name="GBBackgroundRight" inherits="UIPanelButtonTemplate" text="Rt">
-				<Size>
-					<AbsDimension x="30" y="21"/>
-				</Size>
-				<Anchors>
-					<Anchor point="LEFT" relativeTo="GBBackgroundLeft" relativePoint="RIGHT">
-						<Offset x="15" y="0"/>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						GuildBankFrame_ChangeBackground(TABARDBACKGROUNDID+1);
-						debugprint(TABARDBACKGROUNDID);
-					</OnClick>
-				</Scripts>
-			</Button>
-			<Button name="GBBorderLeft" inherits="UIPanelButtonTemplate" text="Lt">
-				<Size>
-					<AbsDimension x="30" y="21"/>
-				</Size>
-				<Anchors>
-					<Anchor point="TOP" relativeTo="GBBackgroundLeft" relativePoint="BOTTOM">
-						<Offset x="0" y="-10"/>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						GuildBankFrame_ChangeBorder(TABARDBORDERID-1);
-						debugprint(TABARDBORDERID);
-					</OnClick>
-				</Scripts>
-			</Button>
-			<Button name="GBBorderRight" inherits="UIPanelButtonTemplate" text="Rt">
-				<Size>
-					<AbsDimension x="30" y="21"/>
-				</Size>
-				<Anchors>
-					<Anchor point="LEFT" relativeTo="GBBorderLeft" relativePoint="RIGHT">
-						<Offset x="15" y="0"/>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						GuildBankFrame_ChangeBorder(TABARDBORDERID+1);
-						debugprint(TABARDBORDERID);
-					</OnClick>
-				</Scripts>
-			</Button>
-			<Button name="GBEmblemLeft" inherits="UIPanelButtonTemplate" text="Lt">
-				<Size>
-					<AbsDimension x="30" y="21"/>
-				</Size>
-				<Anchors>
-					<Anchor point="TOP" relativeTo="GBBorderLeft" relativePoint="BOTTOM">
-						<Offset x="0" y="-10"/>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						GuildBankFrame_ChangeEmblem(TABARDEMBLEMID-1);
-					</OnClick>
-				</Scripts>
-			</Button>
-			<Button name="GBEmblemRight" inherits="UIPanelButtonTemplate" text="Rt">
-				<Size>
-					<AbsDimension x="30" y="21"/>
-				</Size>
-				<Anchors>
-					<Anchor point="LEFT" relativeTo="GBEmblemLeft" relativePoint="RIGHT">
-						<Offset x="15" y="0"/>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						GuildBankFrame_ChangeEmblem(TABARDEMBLEMID+1);
-					</OnClick>
-				</Scripts>
-			</Button>
-			-->
 			<Frame name="GuildBankEmblemFrame">
 				<Size>
 					<AbsDimension x="700" y="80"/>
@@ -813,9 +717,7 @@
 						GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 						GameTooltip:SetText("", 1.0,1.0,1.0 );
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+					<OnLeave function="GameTooltip_Hide"/>
 					<OnClick>
 						GuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
@@ -834,9 +736,7 @@
 						GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 						GameTooltip:SetText("", 1.0,1.0,1.0 );
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+					<OnLeave function="GameTooltip_Hide"/>
 					<OnClick>
 						GuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
@@ -855,9 +755,7 @@
 						GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 						GameTooltip:SetText("", 1.0,1.0,1.0 );
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+					<OnLeave function="GameTooltip_Hide"/>
 					<OnClick>
 						GuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
@@ -876,9 +774,7 @@
 						GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 						GameTooltip:SetText("", 1.0,1.0,1.0 );
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+					<OnLeave function="GameTooltip_Hide"/>
 					<OnClick>
 						GuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
@@ -995,9 +891,7 @@
 					</Button>
 				</Frames>
 				<Scripts>
-					<OnShow>
-						GuildBankFrame_UpdateTabBuyingInfo(self);
-					</OnShow>
+					<OnShow function="GuildBankFrame_UpdateTabBuyingInfo"/>
 				</Scripts>
 			</Frame>
 			<Frame name="GuildBankFrameLog">
@@ -1094,7 +988,7 @@
 						</Anchors>
 						<Scripts>
 							<OnLoad>
-								self:SetWidth(getglobal(self:GetName().."Text"):GetWidth()+40);
+								self:SetWidth(_G[self:GetName().."Text"]:GetWidth()+40);
 							</OnLoad>
 							<OnClick>
 								if ( GuildBankTabInfoEditBox:GetText() ~= GuildBankTabInfoEditBox.text ) then
@@ -1137,9 +1031,7 @@
 									<AbsDimension x="690" y="218"/>
 								</Size>
 								<Scripts>
-									<OnEscapePressed>
-										self:ClearFocus();
-									</OnEscapePressed>
+									<OnEscapePressed function="EditBox_ClearFocus"/>
 									<OnTextChanged>
 										ScrollingEdit_OnTextChanged(self, self:GetParent());
 										local currentTab = GetCurrentGuildBankTab();
@@ -1171,15 +1063,9 @@
 			</Frame>
 		</Frames>
 		<Scripts>
-			<OnLoad>
-				GuildBankFrame_OnLoad(self);
-			</OnLoad>
-			<OnEvent>
-				GuildBankFrame_OnEvent(self, event, ...);
-			</OnEvent>
-			<OnShow>
-				GuildBankFrame_OnShow(self);
-			</OnShow>
+			<OnLoad function="GuildBankFrame_OnLoad"/>
+			<OnEvent function="GuildBankFrame_OnEvent"/>
+			<OnShow function="GuildBankFrame_OnShow"/>
 			<OnHide>
 				GuildBankPopupFrame:Hide();
 				StaticPopup_Hide("GUILDBANK_WITHDRAW");
@@ -1302,9 +1188,7 @@
 					</Layer>
 				</Layers>
 				<Scripts>
-					<OnEscapePressed>
-						GuildBankPopupFrame_CancelEdit(self);
-					</OnEscapePressed>
+					<OnEscapePressed function="GuildBankPopupFrame_CancelEdit"/>
 					<OnEnterPressed>
 						if ( GuildBankPopupOkayButton:IsEnabled() ~= 0 ) then
 							GuildBankPopupOkayButton_OnClick(self);
@@ -1477,15 +1361,10 @@
 			</Button>
 		</Frames>
 		<Scripts>
-			<OnShow>
-				GuildBankPopupFrame_OnShow(self);
-			</OnShow>
+			<OnShow function="GuildBankPopupFrame_OnShow"/>
 			<OnHide>
 				PlaySound("igCharacterInfoTab");
 			</OnHide>
-			<OnMouseWheel>
-				return;
-			</OnMouseWheel>
 		</Scripts>
 	</Frame>
 </Ui>

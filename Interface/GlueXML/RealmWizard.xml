@@ -37,7 +37,7 @@
 			</OnClick>
 		</Scripts>
 	</CheckButton>
-	<ModelFFX name="RealmWizard" setAllPoints="true" file="Interface\Glues\Models\UI_MainMenu_Northrend\UI_MainMenu_Northrend.mdx" hidden="true" parent="GlueParent" enableKeyboard="true" fogNear="0" fogFar="1200" glow="0.08">
+	<ModelFFX name="RealmWizard" toplevel="true" parent="GlueParent" setAllPoints="true" enableKeyboard="true" hidden="true" fogNear="0" fogFar="1200" glow="0.08">
 		<Frames>
 			<Frame name="RealmWizardUI" setAllPoints="true">
 				<Layers>
@@ -383,7 +383,7 @@
 								</Anchors>
 								<Scripts>
 									<OnLoad>
-										getglobal(self:GetName().."Text"):SetText(GAMETYPE_PVE);
+										_G[self:GetName().."Text"]:SetText(GAMETYPE_PVE);
 									</OnLoad>
 									<OnClick>
 										if ( self:GetChecked() ) then
@@ -414,7 +414,7 @@
 								</Anchors>
 								<Scripts>
 									<OnLoad>
-										getglobal(self:GetName().."Text"):SetText(GAMETYPE_PVP);
+										_G[self:GetName().."Text"]:SetText(GAMETYPE_PVP);
 									</OnLoad>
 									<OnClick>
 										if ( self:GetChecked() ) then
@@ -445,7 +445,7 @@
 								</Anchors>
 								<Scripts>
 									<OnLoad>
-										getglobal(self:GetName().."Text"):SetText(GAMETYPE_RP);
+										_G[self:GetName().."Text"]:SetText(GAMETYPE_RP);
 									</OnLoad>
 									<OnClick>
 										if ( self:GetChecked() ) then
@@ -476,7 +476,7 @@
 								</Anchors>
 								<Scripts>
 									<OnLoad>
-										getglobal(self:GetName().."Text"):SetText(GAMETYPE_RPPVP);
+										_G[self:GetName().."Text"]:SetText(GAMETYPE_RPPVP);
 									</OnLoad>
 									<OnClick>
 										if ( self:GetChecked() ) then

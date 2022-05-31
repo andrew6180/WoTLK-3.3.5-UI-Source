@@ -1,6 +1,8 @@
 MAX_TEAM_EMBLEMS = 102;
 MAX_TEAM_BORDERS = 6;
 
+local ARENA_TEAMSIZES = { 2, 3, 5 }
+
 function ArenaRegistrar_OnLoad (self)
 	self:RegisterEvent("PETITION_VENDOR_SHOW");
 	self:RegisterEvent("PETITION_VENDOR_CLOSED");
@@ -45,12 +47,15 @@ function ArenaRegistrar_OnShow (self)
 	ArenaRegistrarPurchaseFrame:Hide();
 	SetPortraitTexture(ArenaRegistrarFramePortrait, "NPC");
 	ArenaRegistrarFrameNpcNameText:SetText(UnitName("NPC"));
+	PlaySound("igQuestListOpen");
 end
 
-function ArenaRegistrar_ShowPurchaseFrame (self, teamSize)
-	ArenaRegistrarPurchaseFrame.id = self:GetID();
+function ArenaRegistrar_ShowPurchaseFrame (self)
+	local id = self:GetID();
+	local teamSize = ARENA_TEAMSIZES[id];
+	ArenaRegistrarPurchaseFrame.id = id;
 	PVPBannerFrame.teamSize = teamSize;
-	if ( GetPetitionItemInfo(ArenaRegistrarPurchaseFrame.id) ) then
+	if ( GetPetitionItemInfo(id) ) then
 		ArenaRegistrar_UpdatePrice();
 	else
 		-- Waiting for the callback
@@ -65,7 +70,10 @@ function ArenaRegistrar_UpdatePrice ()
 	ArenaRegistrarGreetingFrame:Hide();
 end
 
-function ArenaRegistrar_TurnInPetition (self, teamSize)
+function ArenaRegistrar_TurnInPetition (self)
+	local id = self:GetID();
+	local teamSize = ARENA_TEAMSIZES[id];
+
 	ArenaRegistrarFrame.bannerDesign = 1;
 	ArenaRegistrarFrame.dontClose = 1;
 	HideUIPanel(self:GetParent());
@@ -106,7 +114,7 @@ function PVPBannerFrame_OnShow (self)
 		for k, v in pairs(value) do
 			value[k] = random(100) / 100;
 		end
-		getglobal("PVPBannerFrameStandard"..index):SetVertexColor(value.r, value.g, value.b);
+		_G["PVPBannerFrameStandard"..index]:SetVertexColor(value.r, value.g, value.b);
 	end
 
 	PVPBannerFrameStandardEmblemWatermark:SetAlpha(0.4);
@@ -129,7 +137,9 @@ function PVPBannerFrame_OpenColorPicker (button, texture)
 	ShowUIPanel(ColorPickerFrame);
 end
 
-function PVPBannerCustomization_Left (id)
+function PVPBannerCustomization_Left (self)
+	local id = self:GetParent():GetID();
+
 	local texture;
 	if ( id == 1 ) then
 		texture = PVPBannerFrameStandardEmblem;
@@ -152,7 +162,9 @@ function PVPBannerCustomization_Left (id)
 	PlaySound("gsCharacterCreationLook");
 end
 
-function PVPBannerCustomization_Right (id)
+function PVPBannerCustomization_Right (self)
+	local id = self:GetParent():GetID();
+
 	local texture;
 	if ( id == 1 ) then
 		texture = PVPBannerFrameStandardEmblem;
@@ -167,7 +179,7 @@ function PVPBannerCustomization_Right (id)
 		texture = PVPBannerFrameStandardBorder;
 		if ( texture.id == MAX_TEAM_BORDERS ) then 
 			texture.id = 1;
-		else 
+		else
 			texture.id = texture.id + 1;
 		end
 		texture:SetTexture("Interface\\PVPFrame\\PVP-Banner-"..PVPBannerFrame.teamSize.."-Border-"..texture.id);

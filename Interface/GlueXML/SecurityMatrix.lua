@@ -6,6 +6,14 @@ SECURITYMATRIX_GRID_OVERLAP = 6;
 SECURITYMATRIX_HIGHLIGHT_OVERHANG = 4;
 SECURITYMATRIX_PINWHEEL_BUTTON_SIZE = 32;
 SECURITYMATRIX_PINWHEEL_VERTICAL_OFFSET = 18;
+SECURITYMATRIX_NUM_MIN_DIGITS = 2;
+SECURITYMATRIX_NUM_MAX_DIGITS = 2;
+-- Default is Columns are Alphabetic, rows are numeric.
+SECURITYMATRIX_FLIP_COORDS = false;
+SECURITYMATRIX_TEXT_LENGTH = 0
+SECURITYMATRIX_ALL_COLUMN_HEADERS = {}
+SECURITYMATRIX_ALL_ROW_HEADERS = {}
+SECURITYMATRIX_ALL_ELEMENTS = {}
 
 SecurityMatrix_Alphabet = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 
@@ -15,10 +23,17 @@ SecurityMatrix_currentValue = 0;
 SecurityMatrix_isMoving = false;
 SecurityMatrix_updateSpeed = 0.005;
 
+-------------------------------------------------------------------------------
+
 function SecurityMatrix_CreateHeaders()
 	local prevFrame = nil;
 	for i=1, SECURITYMATRIX_NUM_ROWS do
-		local newFrame = CreateFrame("Frame", "$parentRowHeader"..i, SecurityMatrixFrame, "SecurityMatrixHeaderElementTextFrameTemplate");
+		local newFrame = SECURITYMATRIX_ALL_ROW_HEADERS[i]
+		if not newFrame then
+			newFrame = CreateFrame("Frame", "SecurityMatrixFrameRowHeader"..i, SecurityMatrixFrame, "SecurityMatrixHeaderElementTextFrameTemplate");
+			SECURITYMATRIX_ALL_ROW_HEADERS[i] = newFrame
+		end
+		newFrame:Show()
 		if(i == 1) then
 			newFrame:SetPoint("TOPLEFT", 0, -(SECURITYMATRIX_GRID_SIZE-SECURITYMATRIX_GRID_OVERLAP));
 		else
@@ -26,12 +41,21 @@ function SecurityMatrix_CreateHeaders()
 		end
 		newFrame:SetWidth(SECURITYMATRIX_GRID_SIZE);
 		newFrame:SetHeight(SECURITYMATRIX_GRID_SIZE);
-		getglobal("SecurityMatrixFrameRowHeader"..i.."Text"):SetText(i);
-		getglobal("SecurityMatrixFrameRowHeader"..i):SetID(i);
+		if SECURITYMATRIX_FLIP_COORDS then
+			_G["SecurityMatrixFrameRowHeader"..i.."Text"]:SetText(SecurityMatrix_Alphabet[i])
+		else
+			_G["SecurityMatrixFrameRowHeader"..i.."Text"]:SetText(i);
+		end
+		_G["SecurityMatrixFrameRowHeader"..i]:SetID(i);
 		prevFrame = newFrame;
 	end
 	for i=1, SECURITYMATRIX_NUM_COLUMNS do
-		local newFrame = CreateFrame("Frame", "$parentColumnHeader"..i, SecurityMatrixFrame, "SecurityMatrixHeaderElementTextFrameTemplate");
+		local newFrame = SECURITYMATRIX_ALL_COLUMN_HEADERS[i]
+		if not newFrame then
+			newFrame = CreateFrame("Frame", "SecurityMatrixFrameColumnHeader"..i, SecurityMatrixFrame, "SecurityMatrixHeaderElementTextFrameTemplate");
+			SECURITYMATRIX_ALL_COLUMN_HEADERS[i] = newFrame
+		end
+		newFrame:Show()
 		if(i == 1) then
 			newFrame:SetPoint("TOPLEFT", (SECURITYMATRIX_GRID_SIZE-SECURITYMATRIX_GRID_OVERLAP), 0);
 		else
@@ -39,9 +63,22 @@ function SecurityMatrix_CreateHeaders()
 		end
 		newFrame:SetWidth(SECURITYMATRIX_GRID_SIZE);
 		newFrame:SetHeight(SECURITYMATRIX_GRID_SIZE);
-		getglobal("SecurityMatrixFrameColumnHeader"..i.."Text"):SetText(SecurityMatrix_Alphabet[i]);
-		getglobal("SecurityMatrixFrameColumnHeader"..i):SetID(i);
+		if SECURITYMATRIX_FLIP_COORDS then
+			_G["SecurityMatrixFrameColumnHeader"..i.."Text"]:SetText(tostring(i))
+		else
+			_G["SecurityMatrixFrameColumnHeader"..i.."Text"]:SetText(SecurityMatrix_Alphabet[i]);
+		end
+		_G["SecurityMatrixFrameColumnHeader"..i]:SetID(i);
 		prevFrame = newFrame;
+	end
+end
+
+function SecurityMatrix_HideHeaders()
+	for i, v in ipairs(SECURITYMATRIX_ALL_COLUMN_HEADERS) do
+		v:Hide()
+	end
+	for i, v in ipairs(SECURITYMATRIX_ALL_ROW_HEADERS) do
+		v:Hide()
 	end
 end
 
@@ -50,10 +87,22 @@ function SecurityMatrix_CreateElements()
 	--loop through all the rows
 	for i=1, SECURITYMATRIX_NUM_ROWS do
 		--loop through all the columns
+		if not SECURITYMATRIX_ALL_ELEMENTS[i] then SECURITYMATRIX_ALL_ELEMENTS[i] = {} end
 		for j=1, SECURITYMATRIX_NUM_COLUMNS do
 			--create a new frame and name it with a suffix of column+row
-			local newBackgroundFrame = CreateFrame("Frame", "$parentElement"..i.."_"..j, SecurityMatrixFrame, "SecurityMatrixElementFrameTemplate");
-			local newSparkleFrame = CreateFrame("Frame", "$parentElementSparkle"..i.."_"..j, SecurityMatrixFrame, "SecurityMatrixElementSparkleFrameTemplate");
+			if not SECURITYMATRIX_ALL_ELEMENTS[i][j] then SECURITYMATRIX_ALL_ELEMENTS[i][j] = {} end
+			local newBackgroundFrame = SECURITYMATRIX_ALL_ELEMENTS[i][j].background
+			if not newBackgroundFrame then
+				newBackgroundFrame = CreateFrame("Frame", "$parentElement"..i.."_"..j, SecurityMatrixFrame, "SecurityMatrixElementFrameTemplate");
+				SECURITYMATRIX_ALL_ELEMENTS[i][j].background = newBackgroundFrame
+			end
+			newBackgroundFrame:Show()
+			local newSparkleFrame = SECURITYMATRIX_ALL_ELEMENTS[i][j].sparkle
+			if not newSparkleFrame then
+				newSparkleFrame = CreateFrame("Frame", "$parentElementSparkle"..i.."_"..j, SecurityMatrixFrame, "SecurityMatrixElementSparkleFrameTemplate");
+				SECURITYMATRIX_ALL_ELEMENTS[i][j].sparkle = newSparkleFrame
+			end
+			newSparkleFrame:Show()
 			--if this is the first frame then anchor it to the top left of the parent frame
 			if(j == 1) then
 				newBackgroundFrame:SetPoint("TOPLEFT", (SECURITYMATRIX_GRID_SIZE-SECURITYMATRIX_GRID_OVERLAP), -((SECURITYMATRIX_GRID_SIZE-SECURITYMATRIX_GRID_OVERLAP)*(i)));
@@ -67,10 +116,19 @@ function SecurityMatrix_CreateElements()
 			newBackgroundFrame:SetHeight(SECURITYMATRIX_GRID_SIZE);
 			--line the text frame and highlight up with the background frame
 			newSparkleFrame:SetAllPoints(newBackgroundFrame);
-			getglobal("SecurityMatrixFrameElementSparkle"..i.."_"..j.."Highlight"):SetModelScale(SECURITYMATRIX_CELL_HIGHLIGHT_SCALE);
-			getglobal("SecurityMatrixFrameElementSparkle"..i.."_"..j.."Highlight"):SetWidth(SECURITYMATRIX_GRID_SIZE);
-			getglobal("SecurityMatrixFrameElementSparkle"..i.."_"..j.."Highlight"):SetHeight(SECURITYMATRIX_GRID_SIZE);
+			_G["SecurityMatrixFrameElementSparkle"..i.."_"..j.."Highlight"]:SetModelScale(SECURITYMATRIX_CELL_HIGHLIGHT_SCALE);
+			_G["SecurityMatrixFrameElementSparkle"..i.."_"..j.."Highlight"]:SetWidth(SECURITYMATRIX_GRID_SIZE);
+			_G["SecurityMatrixFrameElementSparkle"..i.."_"..j.."Highlight"]:SetHeight(SECURITYMATRIX_GRID_SIZE);
 			prevBackgroundFrame = newBackgroundFrame;
+		end
+	end
+end
+
+function SecurityMatrix_HideElements()
+	for columnNum, column in ipairs(SECURITYMATRIX_ALL_ELEMENTS) do
+		for rowNum, cell in ipairs(column) do
+			SECURITYMATRIX_ALL_ELEMENTS[columnNum][rowNum].background:Hide()
+			SECURITYMATRIX_ALL_ELEMENTS[columnNum][rowNum].sparkle:Hide()
 		end
 	end
 end
@@ -80,27 +138,41 @@ function SecurityMatrix_NewCoordinate(row, column)
 	SecurityMatrix_isMoving = true;
 	
 	--turn off the sparkle on the old cell
-	getglobal("SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Highlight"):Hide();
-	getglobal("SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Texture"):Hide();
+	_G["SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Highlight"]:Hide();
+	_G["SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Texture"]:Hide();
 	
 	--turn off the text highlight on the old row/column headers
-	getglobal("SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow.."Text"):SetText(getglobal("SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow):GetID());
-	getglobal("SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn.."Text"):SetText(SecurityMatrix_Alphabet[getglobal("SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn):GetID()]);
+	if SECURITYMATRIX_FLIP_COORDS then
+		_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn.."Text"]:SetText(_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn]:GetID());
+		_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow.."Text"]:SetText(SecurityMatrix_Alphabet[_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow]:GetID()]);
+	else
+		_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow.."Text"]:SetText(_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow]:GetID());
+		_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn.."Text"]:SetText(SecurityMatrix_Alphabet[_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn]:GetID()]);
+	end
 	
 	--set the new row/column
 	SecurityMatrix_currentRow = row;
 	SecurityMatrix_currentColumn = column;
 	
 	--turn on the sparkle on the new cell
-	getglobal("SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Highlight"):Show();
-	getglobal("SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Texture"):Show();
+	_G["SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Highlight"]:Show();
+	_G["SecurityMatrixFrameElementSparkle"..SecurityMatrix_currentRow.."_"..SecurityMatrix_currentColumn.."Texture"]:Show();
 	
 	--turn on the text highlight on the new row/column headers
-	getglobal("SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow.."Text"):SetText("|cFF00FF00"..getglobal("SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow):GetID().."|r");
-	getglobal("SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn.."Text"):SetText("|cFF00FF00"..SecurityMatrix_Alphabet[getglobal("SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn):GetID()].."|r");
+	if SECURITYMATRIX_FLIP_COORDS then
+		_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn.."Text"]:SetText("|cFF00FF00".._G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn]:GetID().."|r");
+		_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow.."Text"]:SetText("|cFF00FF00"..SecurityMatrix_Alphabet[_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow]:GetID()].."|r");
+	else
+		_G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow.."Text"]:SetText("|cFF00FF00".._G["SecurityMatrixFrameRowHeader"..SecurityMatrix_currentRow]:GetID().."|r");
+		_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn.."Text"]:SetText("|cFF00FF00"..SecurityMatrix_Alphabet[_G["SecurityMatrixFrameColumnHeader"..SecurityMatrix_currentColumn]:GetID()].."|r");
+	end
 	
 	--set the direction text to mention the new cell
-	SecurityMatrixKeypadDirections:SetText(string.format(SECURITYMATRIX_ENTER_CELL, SecurityMatrix_Alphabet[SecurityMatrix_currentColumn], SecurityMatrix_currentRow));
+	if SECURITYMATRIX_FLIP_COORDS then
+		SecurityMatrixKeypadDirections:SetText(string.format(SECURITYMATRIX_ENTER_CELL, SecurityMatrix_Alphabet[SecurityMatrix_currentRow], SecurityMatrix_currentColumn));
+	else
+		SecurityMatrixKeypadDirections:SetText(string.format(SECURITYMATRIX_ENTER_CELL, SecurityMatrix_Alphabet[SecurityMatrix_currentColumn], SecurityMatrix_currentRow));
+	end
 	
 	--set a flag so the update function knows we are just starting a move
 	SecurityMatrix_startMoving = true;
@@ -116,17 +188,29 @@ function SecurityMatrix_GetNewCoordinates()
 	end
 	--move to the next set of coordinates
 	SecurityMatrix_NewCoordinate(y + 1, x + 1);
+	--enable the rotating buttons
+	SecurityMatrixPinwheel_EnableNumbers();
 end
 
 function SecurityMatrix_ButtonClick(self)
-	--show a star to the user and send the number to the client
-	if(not SecurityMatrixKeypadEntryLeftDigit:IsShown()) then
-		SecurityMatrixKeypadEntryLeftDigit:Show();
-	elseif(not SecurityMatrixKeypadEntryRightDigit:IsShown()) then
-		SecurityMatrixKeypadEntryRightDigit:Show();
+	-- Don't allow too many digits
+	if(SECURITYMATRIX_TEXT_LENGTH >= SECURITYMATRIX_NUM_MAX_DIGITS) then return end
+
+	--show another star to the user 
+	SecurityMatrix_SetShownLength(SECURITYMATRIX_TEXT_LENGTH+1)
+	-- If we have enough digits, enable the Ok button
+	if(SECURITYMATRIX_TEXT_LENGTH >= SECURITYMATRIX_NUM_MIN_DIGITS) then
 		--enable the OK button if we have both digits
 		SecurityMatrixKeypadButtonOK:Enable();
 	end
+	
+	-- If we've hit the max, disable the inputs
+	if(SECURITYMATRIX_TEXT_LENGTH >= SECURITYMATRIX_NUM_MAX_DIGITS) then
+		--disable the rotating buttons so the user doesn't enter more
+		SecurityMatrixPinwheel_DisableNumbers();
+	end
+	
+	-- Send the number to the client
 	MatrixEntered(self:GetID());
 	--enable the clear button if it's not already
 	SecurityMatrixKeypadButtonClear:Enable();
@@ -134,10 +218,9 @@ end
 
 function SecurityMatrix_OKClick()
 	--don't move on to the next coordinate if this one is not filled in
-	if(not SecurityMatrixKeypadEntryRightDigit:IsShown()) then return; end
+	if(SECURITYMATRIX_TEXT_LENGTH < SECURITYMATRIX_NUM_MIN_DIGITS) then return; end
 	--clear the *s
-	SecurityMatrixKeypadEntryLeftDigit:Hide();
-	SecurityMatrixKeypadEntryRightDigit:Hide();
+	SecurityMatrix_SetShownLength(0)
 	--enter the coordinates
 	MatrixCommit();
 	SecurityMatrix_GetNewCoordinates();
@@ -149,11 +232,17 @@ end
 function SecurityMatrix_ClearClick()
 	MatrixRevert();
 	--hide the current cell *s
-	SecurityMatrixKeypadEntryLeftDigit:Hide();
-	SecurityMatrixKeypadEntryRightDigit:Hide();
+	SecurityMatrix_SetShownLength(0)
 	--disable the clear and OK buttons
 	SecurityMatrixKeypadButtonClear:Disable();
 	SecurityMatrixKeypadButtonOK:Disable();
+	--enable the rotating buttons
+	SecurityMatrixPinwheel_EnableNumbers();
+end
+
+function SecurityMatrix_SetShownLength(length)
+	SecurityMatrixKeypadEntryDigits:SetText(string.rep('*', length))
+	SECURITYMATRIX_TEXT_LENGTH = length
 end
 
 function SecurityMatrix_OnLoad()
@@ -173,22 +262,39 @@ function SecurityMatrixLoginFrame_OnLoad()
 	SecurityMatrixLoginFrame:RegisterEvent("PLAYER_ENTER_MATRIX");
 	SecurityMatrixLoginFrame:EnableKeyboard(true);
 	
+	SecurityMatrixKeypadDirections:SetPoint("TOPLEFT", SecurityMatrixFrame, "TOPRIGHT", 0, 16);
+	SecurityMatrixKeypadDirections:SetPoint("BOTTOMRIGHT", SecurityMatrixKeypadFrame, "TOPRIGHT", 0, 4);
+	
 	SecurityMatrixLoginFrame:SetWidth(SecurityMatrixFrame:GetWidth() + SecurityMatrixKeypadFrame:GetWidth() + 16);
-	SecurityMatrixLoginFrame:SetHeight(math.max(SecurityMatrixFrame:GetHeight(), SecurityMatrixKeypadFrame:GetHeight()) + 58);
-	SecurityMatrixKeypadDirections:SetPoint("TOPLEFT", SecurityMatrixFrame, "TOPRIGHT", 4, 0);
-	SecurityMatrixKeypadDirections:SetPoint("BOTTOMRIGHT", SecurityMatrixKeypadFrame, "TOPRIGHT", -4, 4);
+	SecurityMatrixLoginFrame:SetHeight(math.max(SecurityMatrixFrame:GetHeight(), SecurityMatrixKeypadFrame:GetHeight() + SecurityMatrixKeypadDirections:GetHeight()) + 58);
 	
 	SecurityMatrixKeypadButtonOK:Disable();
 	SecurityMatrixKeypadButtonClear:Disable();
 end
 
-function SecurityMatrixLoginFrame_OnEvent(event, arg1, arg2)
+function SecurityMatrixLoginFrame_Adjust()
+	SecurityMatrixKeypadDirections:SetWidth(SecurityMatrixKeypadFrame:GetWidth())
+	SecurityMatrixLoginFrame:SetHeight(math.max(SecurityMatrixFrame:GetHeight(), SecurityMatrixKeypadFrame:GetHeight() + SecurityMatrixKeypadDirections:GetHeight()) + 58);
+end
+
+
+function SecurityMatrix_Cleanup()
+	SecurityMatrix_HideHeaders();
+	SecurityMatrix_HideElements();
+end
+
+function SecurityMatrixLoginFrame_OnEvent(event, height, width, minDigits, maxDigits, flipCoords)
 	if(event == "PLAYER_ENTER_MATRIX") then
-		SECURITYMATRIX_NUM_COLUMNS = arg1;
-		SECURITYMATRIX_NUM_ROWS = arg2;
-		SecurityMatrixLoginFrame_OnLoad();
+		SecurityMatrix_Cleanup();
+		SECURITYMATRIX_NUM_COLUMNS = height;
+		SECURITYMATRIX_NUM_ROWS = width;
+		SECURITYMATRIX_NUM_MIN_DIGITS = minDigits;
+		SECURITYMATRIX_NUM_MAX_DIGITS = maxDigits;
+		SECURITYMATRIX_FLIP_COORDS = flipCoords
 		SecurityMatrix_OnLoad();
+		SecurityMatrixLoginFrame_OnLoad();
 		SecurityMatrix_GetNewCoordinates();
+		SecurityMatrixLoginFrame_Adjust();
 		SecurityMatrixLoginFrame:Show();
 	end
 end
@@ -332,7 +438,7 @@ end
 
 function SecurityMatrixPinwheel_HideNumbers()
 	for i=0, 9, 1 do
-		button = getglobal("SecurityMatrixPinwheelButton"..i);
+		button = _G["SecurityMatrixPinwheelButton"..i];
 		button:SetText("");
 		button.stopSpinning = true;
 	end
@@ -340,8 +446,22 @@ end
 
 function SecurityMatrixPinwheel_ShowNumbers()
 	for i=0, 9, 1 do
-		button = getglobal("SecurityMatrixPinwheelButton"..i);
+		button = _G["SecurityMatrixPinwheelButton"..i];
 		button:SetText(i);
 		button.stopSpinning = false;
+	end
+end
+
+function SecurityMatrixPinwheel_EnableNumbers()
+	for i=0, 9, 1 do
+		button = _G["SecurityMatrixPinwheelButton"..i];
+		button:Enable();
+	end
+end
+
+function SecurityMatrixPinwheel_DisableNumbers()
+	for i=0, 9, 1 do
+		button = _G["SecurityMatrixPinwheelButton"..i];
+		button:Disable();
 	end
 end

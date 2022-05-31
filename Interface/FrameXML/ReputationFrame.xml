@@ -56,7 +56,7 @@
 			</Button>
 			<StatusBar name="$parentReputationBar" drawLayer="BACKGROUND" minValue="0" maxValue="1" defaultValue="1">
 				<Size>
-					<AbsDimension x="103" y="13"/>
+					<AbsDimension x="101" y="13"/>
 				</Size>
 				<Anchors>
 					<Anchor point="RIGHT">
@@ -198,32 +198,32 @@
 		</Layers>
 		<Scripts>
 			<OnLoad>
-				getglobal(self:GetName().."ReputationBarHighlight1"):SetPoint("TOPLEFT",self,"TOPLEFT",-2, 4);
-				getglobal(self:GetName().."ReputationBarHighlight1"):SetPoint("BOTTOMRIGHT",self,"BOTTOMRIGHT",-10, -4);
-				getglobal(self:GetName().."ReputationBarAtWarHighlight1"):SetPoint("TOPLEFT",self,"TOPLEFT",3,-2);
-				getglobal(self:GetName().."ReputationBarAtWarHighlight2"):SetPoint("TOPRIGHT",self,"TOPRIGHT",-1,-2);
-				getglobal(self:GetName().."ReputationBarAtWarHighlight1"):SetAlpha(0.2);
-				getglobal(self:GetName().."ReputationBarAtWarHighlight2"):SetAlpha(0.2);
-				getglobal(self:GetName().."Background"):SetPoint("TOPRIGHT", self:GetName().."ReputationBarLeftTexture", "TOPLEFT", 0, 0);
-				getglobal(self:GetName().."LeftLine"):SetWidth(0);
-				getglobal(self:GetName().."BottomLine"):SetHeight(0);
-				getglobal(self:GetName().."BottomLine"):SetPoint("TOP", self:GetName().."ExpandOrCollapseButton", "CENTER", 5, 0);
+				_G[self:GetName().."ReputationBarHighlight1"]:SetPoint("TOPLEFT",self,"TOPLEFT",-2, 4);
+				_G[self:GetName().."ReputationBarHighlight1"]:SetPoint("BOTTOMRIGHT",self,"BOTTOMRIGHT",-10, -4);
+				_G[self:GetName().."ReputationBarAtWarHighlight1"]:SetPoint("TOPLEFT",self,"TOPLEFT",3,-2);
+				_G[self:GetName().."ReputationBarAtWarHighlight2"]:SetPoint("TOPRIGHT",self,"TOPRIGHT",-1,-2);
+				_G[self:GetName().."ReputationBarAtWarHighlight1"]:SetAlpha(0.2);
+				_G[self:GetName().."ReputationBarAtWarHighlight2"]:SetAlpha(0.2);
+				_G[self:GetName().."Background"]:SetPoint("TOPRIGHT", self:GetName().."ReputationBarLeftTexture", "TOPLEFT", 0, 0);
+				_G[self:GetName().."LeftLine"]:SetWidth(0);
+				_G[self:GetName().."BottomLine"]:SetHeight(0);
+				_G[self:GetName().."BottomLine"]:SetPoint("TOP", self:GetName().."ExpandOrCollapseButton", "CENTER", 5, 0);
 			</OnLoad>
 			<OnClick>
-				ReputationBar_OnClick(self);
+				ReputationBar_OnClick(self, button, down);
 			</OnClick>
 			<OnEnter>
 				if (self.tooltip) then
-					getglobal(self:GetName().."ReputationBarFactionStanding"):SetText(self.tooltip);
+					_G[self:GetName().."ReputationBarFactionStanding"]:SetText(self.tooltip);
 				end
-				getglobal(self:GetName().."ReputationBarHighlight1"):Show();
-				getglobal(self:GetName().."ReputationBarHighlight2"):Show();
+				_G[self:GetName().."ReputationBarHighlight1"]:Show();
+				_G[self:GetName().."ReputationBarHighlight2"]:Show();
 			</OnEnter>
 			<OnLeave>
-				getglobal(self:GetName().."ReputationBarFactionStanding"):SetText(self.standingText);
+				_G[self:GetName().."ReputationBarFactionStanding"]:SetText(self.standingText);
 				if ((GetSelectedFaction() ~= self.index) or (not ReputationDetailFrame:IsShown())) then
-					getglobal(self:GetName().."ReputationBarHighlight1"):Hide();
-					getglobal(self:GetName().."ReputationBarHighlight2"):Hide();
+					_G[self:GetName().."ReputationBarHighlight1"]:Hide();
+					_G[self:GetName().."ReputationBarHighlight2"]:Hide();
 				end
 			</OnLeave>
 		</Scripts>
@@ -526,9 +526,7 @@
 					<OnEnter>
 						GameTooltip_AddNewbieTip(self, FACTION, 1.0, 1.0, 1.0, REPUTATION_FACTION_DESCRIPTION, 1);
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>		
+					<OnLeave function="GameTooltip_Hide"/>
 				</Scripts>
 			</Frame>
 			<Frame name="StandingMouseOver">
@@ -540,9 +538,7 @@
 					<OnEnter>
 						GameTooltip_AddNewbieTip(self, STANDING, 1.0, 1.0, 1.0, REPUTATION_STANDING_DESCRIPTION, 1);
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+					<OnLeave function="GameTooltip_Hide"/>
 				</Scripts>
 			</Frame>
 			<Frame name="ReputationDetailFrame" enableMouse="true" hidden="true">
@@ -581,7 +577,7 @@
 								</Anchor>
 							</Anchors>
 						</FontString>
-						<FontString name="ReputationDetailFactionDescription" inherits="GameFontHighlightSmall" justifyH="LEFT">
+						<FontString name="ReputationDetailFactionDescription" inherits="ReputationDetailFont" justifyH="LEFT">
 							<Size>
 								<AbsDimension x="170" y="0"/>
 							</Size>
@@ -669,8 +665,8 @@
 						</Layers>
 						<Scripts>
 							<OnLoad>
-								getglobal(self:GetName().."Text"):SetText(AT_WAR);
-								getglobal(self:GetName().."Text"):SetVertexColor(RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b);
+								_G[self:GetName().."Text"]:SetText(AT_WAR);
+								_G[self:GetName().."Text"]:SetVertexColor(RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b);
 							</OnLoad>
 							<OnClick>
 								FactionToggleAtWar(GetSelectedFaction());
@@ -685,9 +681,7 @@
 								GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 								GameTooltip:SetText(REPUTATION_AT_WAR_DESCRIPTION, nil, nil, nil, nil, 1);
 							</OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
+							<OnLeave function="GameTooltip_Hide"/>
 						</Scripts>
 						<NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
 						<PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
@@ -706,7 +700,7 @@
 						</CheckedTexture>
 						<DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled"/>
 					</CheckButton>
-					<CheckButton name="ReputationDetailInactiveCheckBox" inherits="OptionsCheckButtonTemplate">
+					<CheckButton name="ReputationDetailInactiveCheckBox" inherits="OptionsSmallCheckButtonTemplate">
 						<Size>
 							<AbsDimension x="26" y="26"/>
 						</Size>
@@ -722,7 +716,7 @@
 						</HitRectInsets>
 						<Scripts>
 							<OnLoad>
-								getglobal(self:GetName().."Text"):SetText(MOVE_TO_INACTIVE);
+								_G[self:GetName().."Text"]:SetText(MOVE_TO_INACTIVE);
 							</OnLoad>
 							<OnClick>
 								if ( self:GetChecked() ) then
@@ -737,12 +731,10 @@
 								GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 								GameTooltip:SetText(REPUTATION_MOVE_TO_INACTIVE, nil, nil, nil, nil, 1);
 							</OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
+							<OnLeave function="GameTooltip_Hide"/>
 						</Scripts>
 					</CheckButton>
-					<CheckButton name="ReputationDetailMainScreenCheckBox" inherits="OptionsCheckButtonTemplate">
+					<CheckButton name="ReputationDetailMainScreenCheckBox" inherits="OptionsSmallCheckButtonTemplate">
 						<Size>
 							<AbsDimension x="26" y="26"/>
 						</Size>
@@ -758,7 +750,7 @@
 						</HitRectInsets>
 						<Scripts>
 							<OnLoad>
-								getglobal(self:GetName().."Text"):SetText(SHOW_FACTION_ON_MAINSCREEN);
+								_G[self:GetName().."Text"]:SetText(SHOW_FACTION_ON_MAINSCREEN);
 							</OnLoad>
 							<OnClick>
 								if ( self:GetChecked() ) then
@@ -774,27 +766,17 @@
 								GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 								GameTooltip:SetText(REPUTATION_SHOW_AS_XP, nil, nil, nil, nil, 1);
 							</OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
+							<OnLeave function="GameTooltip_Hide"/>
 						</Scripts>
 					</CheckButton>
 				</Frames>
 			</Frame>
 		</Frames>
 		<Scripts>
-			<OnLoad>
-				ReputationFrame_OnLoad(self);
-			</OnLoad>
-			<OnShow>
-				ReputationFrame_OnShow();
-			</OnShow>
-			<OnEvent>
-				ReputationFrame_OnEvent(self, event, ...);
-			</OnEvent>
-			<OnMouseWheel>
-				return;
-			</OnMouseWheel>
+			<OnLoad function="ReputationFrame_OnLoad"/>
+			<OnShow function="ReputationFrame_OnShow"/>
+			<OnEvent function="ReputationFrame_OnEvent"/>
+			<OnMouseWheel function=""/>
 		</Scripts>
 	</Frame>
 	<Frame name="ReputationWatchBar" enableMouse="true" parent="MainMenuBar" hidden="true">
@@ -911,7 +893,7 @@
 			<Frame name="ReputationWatchBarOverlayFrame" frameStrata="DIALOG" setAllPoints="true">
 				<Layers>
 					<Layer level="ARTWORK">
-						<FontString name="ReputationWatchStatusBarText" inherits="NumberFontNormal" hidden="true">
+						<FontString name="ReputationWatchStatusBarText" inherits="TextStatusBarText" hidden="true">
 							<Anchors>
 								<Anchor point="CENTER">
 									<Offset>
@@ -928,6 +910,8 @@
 			<OnLoad>
 				self:RegisterEvent("UPDATE_FACTION");
 				self:RegisterEvent("PLAYER_LEVEL_UP");
+				self:RegisterEvent("ENABLE_XP_GAIN");
+				self:RegisterEvent("DISABLE_XP_GAIN");
 				self:RegisterEvent("CVAR_UPDATE");
 			</OnLoad>
 			<OnEvent>
@@ -937,7 +921,7 @@
 					    ReputationFrame_Update();
 					end
 					ReputationWatchBar_Update();
-				elseif( event == "PLAYER_LEVEL_UP" ) then
+				elseif( event == "PLAYER_LEVEL_UP" or event == "ENABLE_XP_GAIN" or event == "DISABLE_XP_GAIN" ) then
 					ReputationWatchBar_Update(arg1);
 				elseif( event == "CVAR_UPDATE" and arg1 == "XP_BAR_TEXT" ) then
 					if( arg2 == "1" ) then
@@ -953,9 +937,7 @@
 				end
 				UIParent_ManageFramePositions();
 			</OnShow>
-			<OnHide>
-				UIParent_ManageFramePositions();
-			</OnHide>
+			<OnHide function="UIParent_ManageFramePositions"/>
 			<OnEnter>
 				ReputationWatchStatusBarText:Show();
 			</OnEnter>

@@ -10,13 +10,13 @@
 				UIMenuButton_OnLoad(self);
 			</OnLoad>
 			<OnClick>
-				UIMenuButton_OnClick(self, button);
+				UIMenuButton_OnClick(self, button, down);
 			</OnClick>
 			<OnEnter>
-				UIMenuButton_OnEnter(self);
+				UIMenuButton_OnEnter(self, motion);
 			</OnEnter>
 			<OnLeave>
-				UIMenuButton_OnLeave(self);
+				UIMenuButton_OnLeave(self, motion);
 			</OnLeave>
 		</Scripts>
 		<Layers>

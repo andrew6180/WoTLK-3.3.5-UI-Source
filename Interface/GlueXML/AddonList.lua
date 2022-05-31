@@ -38,7 +38,7 @@ function AddonList_Update()
 
 	for i=1, MAX_ADDONS_DISPLAYED do
 		addonIndex = AddonList.offset + i;
-		entry = getglobal("AddonListEntry"..i);
+		entry = _G["AddonListEntry"..i];
 		if ( addonIndex > numEntrys ) then
 			entry:Hide();
 		else
@@ -47,7 +47,7 @@ function AddonList_Update()
 			checkboxState = GetAddOnEnableState(character, addonIndex);
 			enabled = (checkboxState > 0);
 
-			checkbox = getglobal("AddonListEntry"..i.."Enabled");
+			checkbox = _G["AddonListEntry"..i.."Enabled"];
 			-- If some are enabled then set the checkbox to be gray
 			TriStateCheckbox_SetState(checkboxState, checkbox);
 			if ( checkboxState == 1 ) then
@@ -56,8 +56,8 @@ function AddonList_Update()
 				checkbox.tooltip = nil;
 			end
 
-			string = getglobal("AddonListEntry"..i.."Title");
-			if ( loadable ) then
+			string = _G["AddonListEntry"..i.."Title"];
+			if ( loadable or ( enabled and (reason == "DEP_DEMAND_LOADED" or reason == "DEMAND_LOADED") ) ) then
 				string:SetTextColor(1.0, 0.78, 0.0);
 			elseif ( enabled and reason ~= "DEP_DISABLED" ) then
 				string:SetTextColor(1.0, 0.1, 0.1);
@@ -69,8 +69,8 @@ function AddonList_Update()
 			else
 				string:SetText(name);
 			end
-			urlButton = getglobal("AddonListEntry"..i.."URL");
-			versionButton = getglobal("AddonListEntry"..i.."Update");
+			urlButton = _G["AddonListEntry"..i.."URL"];
+			versionButton = _G["AddonListEntry"..i.."Update"];
 			if ( url ) then
 				if ( newVersion ) then
 					versionButton.tooltip = ADDON_UPDATE_AVAILABLE..CLICK_TO_LAUNCH_ADDON_URL..url;
@@ -88,7 +88,7 @@ function AddonList_Update()
 				versionButton:Hide();
 				urlButton:Hide();
 			end
-			securityIcon = getglobal("AddonListEntry"..i.."SecurityIcon");
+			securityIcon = _G["AddonListEntry"..i.."SecurityIcon"];
 			if ( security == "SECURE" ) then
 				AddonList_SetSecurityIcon(securityIcon, 1);
 			elseif ( security == "INSECURE" ) then
@@ -96,10 +96,10 @@ function AddonList_Update()
 			elseif ( security == "BANNED" ) then
 				AddonList_SetSecurityIcon(securityIcon, 3);
 			end
-			getglobal("AddonListEntry"..i.."Security").tooltip = getglobal("ADDON_"..security);
-			string = getglobal("AddonListEntry"..i.."Status");
+			_G["AddonListEntry"..i.."Security"].tooltip = _G["ADDON_"..security];
+			string = _G["AddonListEntry"..i.."Status"];
 			if ( reason ) then
-				string:SetText(getglobal("ADDON_"..reason));
+				string:SetText(_G["ADDON_"..reason]);
 			else
 				string:SetText("");
 			end
@@ -117,23 +117,30 @@ function AddonTooltip_BuildDeps(...)
 	local deps = "";
 	for i=1, select("#", ...) do
 		if ( i == 1 ) then
-			deps = ADDON_DEPENDENCIES;
+			deps = ADDON_DEPENDENCIES .. select(i, ...);
+		else
+			deps = deps..", "..select(i, ...);
 		end
-		deps = deps..", "..select(i, ...);
 	end
 	return deps;
 end
 
 function AddonTooltip_Update(owner)
 	AddonTooltip.owner = owner;
-	local name, title, notes = GetAddOnInfo(owner:GetID());
-	if ( title ) then
-		AddonTooltipTitle:SetText(title);
+	local name, title, notes,_,_,_, security = GetAddOnInfo(owner:GetID());
+	if ( security == "BANNED" ) then
+		AddonTooltipTitle:SetText(ADDON_BANNED_TOOLTIP);
+		AddonTooltipNotes:SetText("");
+		AddonTooltipDeps:SetText("");
 	else
-		AddonTooltipTitle:SetText(name);
+		if ( title ) then
+			AddonTooltipTitle:SetText(title);
+		else
+			AddonTooltipTitle:SetText(name);
+		end
+		AddonTooltipNotes:SetText(notes);
+		AddonTooltipDeps:SetText(AddonTooltip_BuildDeps(GetAddOnDependencies(owner:GetID())));
 	end
-	AddonTooltipNotes:SetText(notes);
-	AddonTooltipDeps:SetText(AddonTooltip_BuildDeps(GetAddOnDependencies(owner:GetID())));
 
 	local titleHeight = AddonTooltipTitle:GetHeight();
 	local notesHeight = AddonTooltipNotes:GetHeight();
@@ -177,7 +184,7 @@ function AddonList_OnCancel()
 end
 
 function AddonListScrollFrame_OnVerticalScroll(self, offset)
-	local scrollbar = getglobal(self:GetName().."ScrollBar");
+	local scrollbar = _G[self:GetName().."ScrollBar"];
 	scrollbar:SetValue(offset);
 	AddonList.offset = floor((offset / ADDON_BUTTON_HEIGHT) + 0.5);
 	AddonList_Update();
@@ -351,9 +358,7 @@ end
 
 function AddonListCharacterDropDown_Initialize()
 	local selectedValue = GlueDropDownMenu_GetSelectedValue(AddonCharacterDropDown);
-	local info;
-
-	info = {};
+	local info = GlueDropDownMenu_CreateInfo();
 	info.text = ALL;
 	info.value = ALL;
 	info.func = AddonListCharacterDropDown_OnClick;

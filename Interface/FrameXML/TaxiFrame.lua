@@ -49,7 +49,7 @@ function TaxiFrame_OnEvent(self, event, ...)
 		local numValidFlightNodes = 0;
 		for index = 1, num_nodes do
 			local type = TaxiNodeGetType(index);
-			local button = getglobal("TaxiButton"..index);
+			local button = _G["TaxiButton"..index];
 			taxiNodePositions[index] = {};
 			if ( type ~= "NONE" ) then
 				numValidFlightNodes = numValidFlightNodes + 1;
@@ -66,8 +66,10 @@ function TaxiFrame_OnEvent(self, event, ...)
 						if ( taxiNodePositions[checkNode].x ) then
 							if ( (currX > checkX - TAXI_BUTTON_HALF_WIDTH) and (currX < checkX + TAXI_BUTTON_HALF_WIDTH) ) then
 								if ( (currY > checkY - TAXI_BUTTON_HALF_HEIGHT) and (currY < checkY + TAXI_BUTTON_HALF_HEIGHT) ) then
-									taxiNodePositions[index].x = currX + currX - checkX;
-									taxiNodePositions[index].y = currY + currY - checkY;
+									taxiNodePositions[index].x = currX + (currX - checkX) * 0.5;
+									taxiNodePositions[index].y = currY + (currY - checkY) * 0.5;
+									taxiNodePositions[checkNode].x = checkX + (checkX - currX) * 0.5;
+									taxiNodePositions[checkNode].y = checkY + (checkY - currY) * 0.5;
 								end
 							end
 						end
@@ -85,7 +87,7 @@ function TaxiFrame_OnEvent(self, event, ...)
 	
 		-- Hide remaining nodes
 		for index = num_nodes+1, NUM_TAXI_BUTTONS, 1 do
-			local button = getglobal("TaxiButton"..index);
+			local button = _G["TaxiButton"..index];
 			button:Hide();
 		end 
 
@@ -132,7 +134,7 @@ function TaxiNodeOnButtonEnter(button)
 		end
 
 		for i=1, NUM_TAXI_ROUTES do
-			line = getglobal("TaxiRoute"..i);
+			line = _G["TaxiRoute"..i];
 			if ( i <= numRoutes ) then
 				sX = TaxiGetSrcX(index, i)*w;
 				sY = TaxiGetSrcY(index, i)*h;
@@ -170,7 +172,7 @@ function DrawOneHopLines()
 				line:SetTexture("Interface\\TaxiFrame\\UI-Taxi-Line");
 				NUM_TAXI_ROUTES = numLines;
 			else
-				line = getglobal("TaxiRoute"..numLines);
+				line = _G["TaxiRoute"..numLines];
 			end
 			if ( line ) then
 				sX = TaxiGetSrcX(i, 1)*w;
@@ -183,7 +185,7 @@ function DrawOneHopLines()
 		end
 	end
 	for i=numLines+1, NUM_TAXI_ROUTES do
-		getglobal("TaxiRoute"..i):Hide();
+		_G["TaxiRoute"..i]:Hide();
 	end
 	if ( numSingleHops == 0 ) then
 		UIErrorsFrame:AddMessage(ERR_TAXINOPATHS, 1.0, 0.1, 0.1, 1.0);

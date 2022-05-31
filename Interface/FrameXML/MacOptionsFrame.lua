@@ -9,7 +9,9 @@ MacOptionsFrameCheckButtons["ITUNES_SHOW_FEEDBACK"] = { index = 7, cvar = "iTune
 MacOptionsFrameCheckButtons["ITUNES_SHOW_ALL_TRACK_CHANGES"] = { index = 8, cvar = "iTunesTrackDisplay", tooltipText = ITUNES_SHOW_ALL_TRACK_CHANGES_TOOLTIP};
 
 function MacOptionsFrame_OnLoad(self)
-	self:RegisterEvent("CVAR_UPDATE");
+	if(IsMacClient()) then
+		self:RegisterEvent("CVAR_UPDATE");
+	end
 end
 
 function MacOptionsFrame_OnEvent(self, event, ...)
@@ -22,11 +24,18 @@ function MacOptionsFrame_OnEvent(self, event, ...)
 	end
 end
 
+function MacOptionsFrame_DisableText(text)
+	text:SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+end
+
 function MacOptionsFrame_DisableSlider(slider)
 	local name = slider:GetName();
-	local value = getglobal(name.."Value");
-	getglobal(name.."Thumb"):Hide();
-	getglobal(name.."Text"):SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+	local value = _G[name.."Value"];
+	_G[name.."Thumb"]:Hide();
+	MacOptionsFrame_DisableText( _G[name.."Text"] );
+	MacOptionsFrame_DisableText( _G[name.."Low"] );
+	MacOptionsFrame_DisableText( _G[name.."High"] );
+	slider:Disable();
 	if ( value ) then
 		value:SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
 	end
@@ -34,13 +43,13 @@ end
 
 function MacOptionsFrame_Load()
 	for index, value in pairs(MacOptionsFrameCheckButtons) do
-		local button = getglobal("MacOptionsFrameCheckButton"..value.index);
-		local string = getglobal("MacOptionsFrameCheckButton"..value.index.."Text");
+		local button = _G["MacOptionsFrameCheckButton"..value.index];
+		local string = _G["MacOptionsFrameCheckButton"..value.index.."Text"];
 		local checked = 0;
 		checked = GetCVar(value.cvar);
 		button:SetChecked(checked);
 		
-		string:SetText(getglobal(index));
+		string:SetText(_G[index]);
 		button.tooltipText = value.tooltipText;
 		
 		if(not MovieRecording_IsSupported() and (value.index < 7)) then
@@ -49,30 +58,48 @@ function MacOptionsFrame_Load()
 			MacOptionsFrame_EnableCheckBox(button);
 		end
 	end
+
+
+	
+
 	if(not MovieRecording_IsSupported()) then
 		UIDropDownMenu_DisableDropDown(MacOptionsFrameResolutionDropDown);
 		UIDropDownMenu_DisableDropDown(MacOptionsFrameFramerateDropDown);
 		UIDropDownMenu_DisableDropDown(MacOptionsFrameCodecDropDown);
 		MacOptionsFrame_DisableSlider(MacOptionsFrameQualitySlider);
 		MacOptionsButtonCompress:Disable();
+
+		-- disable frame text
+		MacOptionsFrame_DisableText(MacOptionsFrameText1);
+		MacOptionsFrame_DisableText(MacOptionsFrameText2);
+		MacOptionsFrame_DisableText(MacOptionsFrameText3);
+		MacOptionsFrame_DisableText(MacOptionsFrameText4);
+ 
 	else
 		MacOptionsFrameQualitySlider:SetValue(GetCVar("MovieRecordingQuality"));
 		if GetCVar("MovieRecordingGUI") then
-			MacOptionsFrame_EnableCheckBox(getglobal("MacOptionsFrameCheckButton3"));
+			MacOptionsFrame_EnableCheckBox(_G["MacOptionsFrameCheckButton3"]);
 		else
-			MacOptionsFrame_DisableCheckBox(getglobal("MacOptionsFrameCheckButton3"));
+			MacOptionsFrame_DisableCheckBox(_G["MacOptionsFrameCheckButton3"]);
 		end
 	end
 	if(not MovieRecording_IsCursorRecordingSupported()) then
-		local button = getglobal("MacOptionsFrameCheckButton3");
+		local button = _G["MacOptionsFrameCheckButton3"];
 		button:SetChecked(0);
 		MacOptionsFrame_DisableCheckBox(button);
 	end
+
+	-- make sure that if UI recording is not enabled, that we disable cursor recording (it's part of the UI)
+	if ( not MacOptionsFrameCheckButton1:GetChecked() ) then
+		MacOptionsFrameCheckButton3:SetChecked(0);
+		MacOptionsFrame_DisableCheckBox(MacOptionsFrameCheckButton3);		
+	end
+
 end
 
 function MacOptionsFrame_Save()
 	for index, value in pairs(MacOptionsFrameCheckButtons) do
-		local button = getglobal("MacOptionsFrameCheckButton"..value.index);
+		local button = _G["MacOptionsFrameCheckButton"..value.index];
 		if ( button:GetChecked() ) then
 			value.value = "1";
 		else
@@ -100,6 +127,9 @@ function MacOptionsFrame_Cancel()
 end
 
 function MacOptionsFrameResolutionDropDown_OnLoad(self)
+	if ( not IsMacClient() ) then
+		return;
+	end
 	local ratio, width;
 	
 	UIDropDownMenu_Initialize(self, MacOptionsFrameResolutionDropDown_Initialize);
@@ -110,9 +140,11 @@ function MacOptionsFrameResolutionDropDown_OnLoad(self)
 	UIDropDownMenu_SetWidth(MacOptionsFrameResolutionDropDown, 110);
 end
 
+local function greaterThanTableSort(a, b) return a > b end 
+
 function MacOptionsFrameResolutionDropDown_Initialize()
 	local info = UIDropDownMenu_CreateInfo();
-	local width, height, ratio, halfWidth, quarterWidth;
+	local width, height, ratio, halfWidth, quarterWidth, oldWidth;
 		
 	ratio = MovieRecording_GetAspectRatio();
 	width = MovieRecording_GetViewportWidth();
@@ -142,8 +174,8 @@ function MacOptionsFrameResolutionDropDown_Initialize()
 			table.insert(resWidth, tonumber(quarterWidth));
 		end
 	end
-	function greater(a, b) return a > b end 
-	table.sort(resWidth, greater);
+	
+	table.sort(resWidth, greaterThanTableSort);
 	
 	local lastWidth = width;
 	for index, value in pairs(resWidth) do
@@ -172,6 +204,10 @@ function MacOptionsFrameResolutionButton_OnClick(self)
 end
 
 function MacOptionsFrameFramerateDropDown_OnLoad(self)
+	if ( not IsMacClient() ) then
+		return;
+	end
+	
 	UIDropDownMenu_Initialize(self, MacOptionsFrameFramerateDropDown_Initialize);
 	UIDropDownMenu_SetSelectedValue(self, GetCVar("MovieRecordingFramerate"));
 	UIDropDownMenu_SetWidth(self, 110);
@@ -213,6 +249,10 @@ function MacOptionsFrameCodecDropDown_OnClick(self)
 end
 
 function MacOptionsFrameCodecDropDown_OnLoad(self)
+	if ( not IsMacClient() ) then
+		return;
+	end
+	
 	UIDropDownMenu_Initialize(self, MacOptionsFrameCodecDropDown_Initialize);
 	UIDropDownMenu_SetSelectedValue(self, tonumber(GetCVar("MovieRecordingCompression")));
 	UIDropDownMenu_SetWidth(self, 110);
@@ -256,10 +296,17 @@ end
 function MacOptionsFrame_SetDefaults()
 	local checkButton, slider;
 	for index, value in pairs(MacOptionsFrameCheckButtons) do
-		checkButton = getglobal("MacOptionsFrameCheckButton"..value.index);
+		checkButton = _G["MacOptionsFrameCheckButton"..value.index];
 		checkButton:SetChecked(GetCVarDefault(value.cvar));
 	end
-	MacOptionsFrame_EnableCheckBox(getglobal("MacOptionsFrameCheckButton3"));
+	if(not MovieRecording_IsCursorRecordingSupported()) then
+		local button = _G["MacOptionsFrameCheckButton3"];
+		button:SetChecked(0);
+		MacOptionsFrame_DisableCheckBox(button);
+	else
+		local button = _G["MacOptionsFrameCheckButton3"];
+		MacOptionsFrame_EnableCheckBox(button);
+	end
 
 	UIDropDownMenu_Initialize(MacOptionsFrameFramerateDropDown, MacOptionsFrameFramerateDropDown_Initialize);
 	UIDropDownMenu_SetSelectedValue(MacOptionsFrameFramerateDropDown, "29.97");
@@ -276,7 +323,7 @@ end
 function MacOptionsFrame_DisableCheckBox(checkBox)
 	--checkBox:SetChecked(0);
 	checkBox:Disable();
-	getglobal(checkBox:GetName().."Text"):SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+	_G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
 end
 
 function MacOptionsFrame_EnableCheckBox(checkBox, setChecked, checked, isWhite)
@@ -285,9 +332,9 @@ function MacOptionsFrame_EnableCheckBox(checkBox, setChecked, checked, isWhite)
 	end
 	checkBox:Enable();
 	if ( isWhite ) then
-		getglobal(checkBox:GetName().."Text"):SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
+		_G[checkBox:GetName().."Text"]:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
 	else
-		getglobal(checkBox:GetName().."Text"):SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
+		_G[checkBox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
 	end
 	
 end

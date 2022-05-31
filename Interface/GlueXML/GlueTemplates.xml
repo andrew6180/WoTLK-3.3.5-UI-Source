@@ -15,11 +15,11 @@
 		<HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
 	</Button>
 	<Texture name="GlueScrollBarButton" virtual="true">
-		<TexCoords left="0.25" right="0.75" top="0.25" bottom="0.75"/>
+		<TexCoords left="0.23" right="0.77" top="0.23" bottom="0.77"/>
 	</Texture>
 	<Button name="GlueScrollUpButtonTemplate" virtual="true">
 		<Size>
-			<AbsDimension x="16" y="16"/>
+			<AbsDimension x="18" y="18"/>
 		</Size>
 		<NormalTexture inherits="GlueScrollBarButton" file="Interface\Buttons\UI-ScrollBar-ScrollUpButton-Up"/>
 		<PushedTexture inherits="GlueScrollBarButton" file="Interface\Buttons\UI-ScrollBar-ScrollUpButton-Down"/>
@@ -28,7 +28,7 @@
 	</Button>
 	<Button name="GlueScrollDownButtonTemplate" virtual="true">
 		<Size>
-			<AbsDimension x="16" y="16"/>
+			<AbsDimension x="18" y="18"/>
 		</Size>
 		<NormalTexture inherits="GlueScrollBarButton" file="Interface\Buttons\UI-ScrollBar-ScrollDownButton-Up"/>
 		<PushedTexture inherits="GlueScrollBarButton" file="Interface\Buttons\UI-ScrollBar-ScrollDownButton-Down"/>
@@ -125,9 +125,9 @@
 		</Scripts>
 		<ThumbTexture inherits="GlueScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob">
 			<Size>
-				<AbsDimension x="16" y="24"/>
+				<AbsDimension x="18" y="24"/>
 			</Size>
-			<TexCoords left="0.25" right="0.75" top="0.125" bottom="0.875"/>
+			<TexCoords left="0.20" right="0.80" top="0.125" bottom="0.875"/>
 		</ThumbTexture>
 	</Slider>
 	<ScrollFrame name="GlueScrollFrameTemplate" virtual="true">
@@ -149,8 +149,8 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
-				getglobal(self:GetName().."ScrollBarScrollDownButton"):Disable();
-				getglobal(self:GetName().."ScrollBarScrollUpButton"):Disable();
+				_G[self:GetName().."ScrollBarScrollDownButton"]:Disable();
+				_G[self:GetName().."ScrollBarScrollUpButton"]:Disable();
 				GlueScrollFrame_OnScrollRangeChanged(self);
 			</OnLoad>
 			<OnScrollRangeChanged>

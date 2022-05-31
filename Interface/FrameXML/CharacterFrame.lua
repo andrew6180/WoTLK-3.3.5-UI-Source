@@ -1,10 +1,10 @@
 CHARACTERFRAME_SUBFRAMES = { "PaperDollFrame", "PetPaperDollFrame", "SkillFrame", "ReputationFrame", "TokenFrame" };
-
+local NUM_CHARACTERFRAME_TABS = 5;
 function ToggleCharacter (tab)
-	local subFrame = getglobal(tab);
+	local subFrame = _G[tab];
 	if ( subFrame ) then
-		PanelTemplates_SetTab(CharacterFrame, subFrame:GetID());
 		if (not subFrame.hidden) then
+			PanelTemplates_SetTab(CharacterFrame, subFrame:GetID());
 			if ( CharacterFrame:IsShown() ) then
 				if ( subFrame:IsShown() ) then
 					HideUIPanel(CharacterFrame);	
@@ -23,9 +23,9 @@ end
 function CharacterFrame_ShowSubFrame (frameName)
 	for index, value in pairs(CHARACTERFRAME_SUBFRAMES) do
 		if ( value == frameName ) then
-			getglobal(value):Show()
+			_G[value]:Show()
 		else
-			getglobal(value):Hide();	
+			_G[value]:Hide();	
 		end	
 	end 
 end
@@ -87,8 +87,15 @@ function CharacterFrame_OnShow (self)
 	SetPortraitTexture(CharacterFramePortrait, "player");
 	CharacterNameText:SetText(UnitPVPName("player"));
 	UpdateMicroButtons();
+	PlayerFrameHealthBar.showNumeric = true;
+	PlayerFrameManaBar.showNumeric = true;
+	PlayerFrameAlternateManaBar.showNumeric = true;
+	MainMenuExpBar.showNumeric = true;
+	PetFrameHealthBar.showNumeric = true;
+	PetFrameManaBar.showNumeric = true;
 	ShowTextStatusBarText(PlayerFrameHealthBar);
 	ShowTextStatusBarText(PlayerFrameManaBar);
+	ShowTextStatusBarText(PlayerFrameAlternateManaBar);
 	ShowTextStatusBarText(MainMenuExpBar);
 	ShowTextStatusBarText(PetFrameHealthBar);
 	ShowTextStatusBarText(PetFrameManaBar);
@@ -100,10 +107,54 @@ end
 function CharacterFrame_OnHide (self)
 	PlaySound("igCharacterInfoClose");
 	UpdateMicroButtons();
+	PlayerFrameHealthBar.showNumeric = nil;
+	PlayerFrameManaBar.showNumeric = nil;
+	PlayerFrameAlternateManaBar.showNumeric = nil;
+	MainMenuExpBar.showNumeric =nil;
+	PetFrameHealthBar.showNumeric = nil;
+	PetFrameManaBar.showNumeric = nil;
 	HideTextStatusBarText(PlayerFrameHealthBar);
 	HideTextStatusBarText(PlayerFrameManaBar);
+	HideTextStatusBarText(PlayerFrameAlternateManaBar);
 	HideTextStatusBarText(MainMenuExpBar);
 	HideTextStatusBarText(PetFrameHealthBar);
 	HideTextStatusBarText(PetFrameManaBar);
 	HideWatchedReputationBarText();
+end
+
+local function CompareFrameSize(frame1, frame2)
+	return frame1:GetWidth() > frame2:GetWidth();
+end
+local CharTabtable = {};
+function CharacterFrame_TabBoundsCheck(self)
+	if ( string.sub(self:GetName(), 1, 17) ~= "CharacterFrameTab" ) then
+		return;
+	end
+	
+	local totalSize = 60;
+	for i=1, NUM_CHARACTERFRAME_TABS do
+		_G["CharacterFrameTab"..i.."Text"]:SetWidth(0);
+		PanelTemplates_TabResize(_G["CharacterFrameTab"..i], 0);
+		totalSize = totalSize + _G["CharacterFrameTab"..i]:GetWidth();
+	end
+	
+	local diff = totalSize - 465
+	
+	if ( diff > 0 and CharacterFrameTab5:IsShown() and CharacterFrameTab2:IsShown()) then
+		--Find the biggest tab
+		for i=1, NUM_CHARACTERFRAME_TABS do
+			CharTabtable[i]=_G["CharacterFrameTab"..i];
+		end
+		table.sort(CharTabtable, CompareFrameSize);
+		
+		local i=1;
+		while ( diff > 0 and i <= NUM_CHARACTERFRAME_TABS) do
+			local tabText = _G[CharTabtable[i]:GetName().."Text"]
+			local change = min(10, diff);
+			tabText:SetWidth(tabText:GetWidth() - change);
+			diff = diff - change;
+			PanelTemplates_TabResize(CharTabtable[i], 0);
+			i = i+1;
+		end
+	end
 end

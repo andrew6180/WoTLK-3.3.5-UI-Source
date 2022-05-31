@@ -126,7 +126,7 @@
 	</Button>
 	
 	<!--Top Level Frame-->
-	<Frame name="SecurityMatrixLoginFrame" parent="GlueParent" frameStrata="HIGH" hidden="true">
+	<Frame name="SecurityMatrixLoginFrame" toplevel="true" parent="GlueParent" frameStrata="HIGH" hidden="true">
 		<Size x="512" y="512"/>
 		<Anchors>
 			<Anchor point="CENTER"/>
@@ -279,7 +279,11 @@
 				-->
 				<Size x="180" y="212"/>
 				<Anchors>
-					<Anchor point="BOTTOMLEFT" relativeTo="SecurityMatrixFrame" relativePoint="BOTTOMRIGHT"/>
+					<Anchor point="BOTTOMRIGHT" relativeTo="SecurityMatrixLoginFrame" relativePoint="BOTTOMRIGHT">
+						<Offset>
+							<AbsDimension x="-8" y="8"/>
+						</Offset>
+					</Anchor>
 				</Anchors>
 				<Backdrop bgFile="Interface\TutorialFrame\TutorialFrameBackground" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
 					<BackgroundInsets>
@@ -294,6 +298,16 @@
 				</Backdrop>
 				<Layers>
 					<Layer level="OVERLAY">
+						<FontString name="SecurityMatrixKeypadEntryDigits" inherits="GlueFontNormalGargantuan" text="">
+							<Shadow>
+								<Offset>
+									<AbsDimension x="1" y="1"/>
+								</Offset>
+								<Color r="0" g="0" b="0"/>
+							</Shadow>
+						</FontString>
+					</Layer>
+					<!--<Layer level="OVERLAY">
 						<FontString name="SecurityMatrixKeypadEntryLeftDigit" inherits="GlueFontNormalGargantuan" text="*" justifyH="RIGHT" hidden="true">
 							<Anchors>
 								<Anchor point="RIGHT" relativePoint="CENTER">
@@ -308,7 +322,7 @@
 								<Anchor point="LEFT" relativeTo="SecurityMatrixKeypadEntryLeftDigit" relativePoint="RIGHT"/>
 							</Anchors>
 						</FontString>
-					</Layer>
+					</Layer> -->
 				</Layers>
 				<Frames>
 					<!--Keypad
@@ -433,8 +447,7 @@
 			</OnEvent>
 			<OnKeyDown>
 				if(key == "ESCAPE") then
-					SecurityMatrixKeypadEntryLeftDigit:Hide();
-					SecurityMatrixKeypadEntryRightDigit:Hide();
+					SecurityMatrix_SetShownLength(0);
 					StatusDialogClick();
 					SecurityMatrixLoginFrame:Hide();
 				end

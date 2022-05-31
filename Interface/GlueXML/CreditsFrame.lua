@@ -199,8 +199,8 @@ function CreditsFrame_Update(self)
 	
 	for i=1, NUM_CREDITS_ART_TEXTURES_HIGH, 1 do
 		for j=1, NUM_CREDITS_ART_TEXTURES_WIDE, 1 do
-			getglobal("CreditsArtAlt"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)):Hide();
-			getglobal("CreditsArtCache"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)):SetAlpha(0.005);
+			_G["CreditsArtAlt"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)]:Hide();
+			_G["CreditsArtCache"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)]:SetAlpha(0.005);
 		end
 	end
 
@@ -244,14 +244,14 @@ function CreditsFrame_SetArtTextures(self,textureName, index, alpha)
 	local texture;
 	local texIndex = 1;
 	local width, height;
-	getglobal(textureName..1):SetPoint("TOPLEFT", "CreditsFrame", "TOPLEFT", info.offsetx, info.offsety - 128);
+	_G[textureName..1]:SetPoint("TOPLEFT", "CreditsFrame", "TOPLEFT", info.offsetx, info.offsety - 128);
 	for i=1, NUM_CREDITS_ART_TEXTURES_HIGH, 1 do
 		height = info.h - ((i - 1) * 256);
 		if ( height > 256 ) then
 			height = 256;
 		end
 		for j=1, NUM_CREDITS_ART_TEXTURES_WIDE, 1 do
-			texture = getglobal(textureName..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j));
+			texture = _G[textureName..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)];
 			width = info.w - ((j - 1) * 256);
 			if ( width > 256 ) then
 				width = 256;
@@ -299,7 +299,7 @@ function CreditsFrame_UpdateCache(self)
 		return;
 	end
 
-	getglobal("CreditsArtCache"..self.cacheIndex):SetTexture("Interface\\Glues\\Credits\\"..info.file..self.cacheIndex);
+	_G["CreditsArtCache"..self.cacheIndex]:SetTexture("Interface\\Glues\\Credits\\"..info.file..self.cacheIndex);
 end
 
 function CreditsFrame_UpdateArt(self, index, elapsed)
@@ -313,7 +313,7 @@ function CreditsFrame_UpdateArt(self, index, elapsed)
 
 			for i=1, NUM_CREDITS_ART_TEXTURES_HIGH, 1 do
 				for j=1, NUM_CREDITS_ART_TEXTURES_WIDE, 1 do
-					getglobal("CreditsArtAlt"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)):SetAlpha(self.alphaOut);
+					_G["CreditsArtAlt"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)]:SetAlpha(self.alphaOut);
 				end
 			end
 
@@ -328,7 +328,7 @@ function CreditsFrame_UpdateArt(self, index, elapsed)
 			self.alphaIn = min(self.alphaIn + (CREDITS_FADE_RATE * elapsed), maxAlpha);
 			for i=1, NUM_CREDITS_ART_TEXTURES_HIGH, 1 do
 				for j=1, NUM_CREDITS_ART_TEXTURES_WIDE, 1 do
-					getglobal("CreditsArt"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)):SetAlpha(self.alphaIn);
+					_G["CreditsArt"..(((i - 1) * NUM_CREDITS_ART_TEXTURES_WIDE) + j)]:SetAlpha(self.alphaIn);
 				end
 			end
 
@@ -349,7 +349,6 @@ function CreditsFrame_UpdateArt(self, index, elapsed)
 	self.alphaIn = 0;
 	self.currentArt = index;
 	CreditsFrame_SetArtTextures(self, "CreditsArt", index, self.alphaIn);
-	debugprint(CreditsArtInfo[self.creditsType][index].file);
 end
 
 function CreditsFrame_OnUpdate(self, elapsed)

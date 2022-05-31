@@ -24,6 +24,7 @@ end
 function InspectModelFrame_OnLoad(self)
 	self.rotation = 0.61;
 	InspectModelFrame:SetRotation(self.rotation);
+	self:RegisterEvent("DISPLAY_SIZE_CHANGED");
 end
 
 function InspectModelRotateLeftButton_OnClick()
@@ -91,7 +92,7 @@ function InspectPaperDollItemSlotButton_OnLoad(self)
 	local checkRelic;
 	id, textureName, checkRelic = GetInventorySlotInfo(strsub(slotName,8));
 	self:SetID(id);
-	local texture = getglobal(slotName.."IconTexture");
+	local texture = _G[slotName.."IconTexture"];
 	texture:SetTexture(textureName);
 	self.backgroundTextureName = textureName;
 	self.checkRelic = checkRelic;
@@ -110,9 +111,9 @@ end
 function InspectPaperDollItemSlotButton_OnEnter(self)
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	if ( not GameTooltip:SetInventoryItem(InspectFrame.unit, self:GetID()) ) then
-		local text = getglobal(strupper(strsub(self:GetName(), 8)));
+		local text = _G[strupper(strsub(self:GetName(), 8))];
 		if ( self.checkRelic and UnitHasRelicSlot(InspectFrame.unit) ) then
-			text = getglobal("RELICSLOT");
+			text = _G["RELICSLOT"];
 		end
 		GameTooltip:SetText(text);
 	end
@@ -138,7 +139,7 @@ function InspectPaperDollItemSlotButton_Update(button)
 	if ( GameTooltip:IsOwned(button) ) then
 		if ( texture ) then
             if ( not GameTooltip:SetInventoryItem(InspectFrame.unit, button:GetID()) ) then
-				GameTooltip:SetText(getglobal(strupper(strsub(button:GetName(), 8))));
+				GameTooltip:SetText(_G[strupper(strsub(button:GetName(), 8))]);
 			end
 		else
 			GameTooltip:Hide();

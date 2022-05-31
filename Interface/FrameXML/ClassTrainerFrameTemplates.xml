@@ -13,14 +13,12 @@
 			<OnLoad>
 				self:SetFrameLevel(self:GetFrameLevel() + 1);
 			</OnLoad>
-			<OnClick>
-				ClassTrainerSkillButton_OnClick(self, button);
-			</OnClick>
+			<OnClick function="ClassTrainerSkillButton_OnClick"/>
 			<OnEnter>
-				getglobal(self:GetName().."SubText"):SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
+				_G[self:GetName().."SubText"]:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
 			</OnEnter>
 			<OnLeave>
-				getglobal(self:GetName().."SubText"):SetTextColor(self.r, self.g, self.b);
+				_G[self:GetName().."SubText"]:SetTextColor(self.r, self.g, self.b);
 			</OnLeave>
 		</Scripts>
 		<NormalTexture file="Interface\Buttons\UI-MinusButton-UP">
@@ -60,9 +58,7 @@
 			</Anchors>
 		</DisabledTexture>
 		<ButtonText name="$parentText">
-			<Size>
-				<AbsDimension x="0" y="13"/>
-			</Size>
+			<Size x="270" y="13"/>
 			<Anchors>
 				<Anchor point="LEFT" relativeTo="$parentHighlight" relativePoint="RIGHT">
 					<Offset>

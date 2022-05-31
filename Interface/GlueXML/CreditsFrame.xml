@@ -1,7 +1,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 	<Script file="CreditsFrame.lua"/>
-	<Frame name="CreditsFrame" setAllPoints="true" parent="GlueParent" enableKeyboard="true" hidden="true">
+	<Frame name="CreditsFrame" toplevel="true" parent="GlueParent" setAllPoints="true" enableKeyboard="true" hidden="true">
 		<Layers>
 			<Layer level="OVERLAY">
 				<Texture name="CreditsLogo" file="Interface\Glues\Common\Glues-WoW-WotLKLogo">
@@ -230,7 +230,7 @@
 				</Texture>
 				<Texture name="LowerBlackBar">
 					<Size>
-						<AbsDimension x="1024" y="128"/>
+						<AbsDimension x="1024" y="126"/>
 					</Size>
 					<Anchors>
 						<Anchor point="BOTTOMLEFT"/>
@@ -448,7 +448,7 @@
 					</SimpleHTML>
 				</ScrollChild>
 			</ScrollFrame>
-			<Button name="CreditsFrameSwitchButton1" inherits="GlueButtonSmallTemplate" id="1">
+			<Button name="CreditsFrameSwitchButton1" inherits="GlueButtonSmallTemplateBlue" id="1">
 				<Size>
 					<AbsDimension x="260" y="35"/>
 				</Size>
@@ -465,7 +465,7 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<Button name="CreditsFrameSwitchButton2" inherits="GlueButtonSmallTemplate" id="2">
+			<Button name="CreditsFrameSwitchButton2" inherits="GlueButtonSmallTemplateBlue" id="2">
 				<Size>
 					<AbsDimension x="260" y="35"/>
 				</Size>

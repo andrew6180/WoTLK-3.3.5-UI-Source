@@ -44,8 +44,8 @@ end
 --
 local secureStateDrivers = {};
 local unitExistsWatchers = {};
-local unitExistsCache = setmetatable({}, 
-                                     { __index = function(t,k) 
+local unitExistsCache = setmetatable({},
+                                     { __index = function(t,k)
                                                      local v = UnitExists(k) or false;
                                                      t[k] = v;
                                                      return v;
@@ -56,7 +56,7 @@ local timer = 0;
 
 -- Check to see if a frame is registered
 function UnitWatchRegistered(frame)
-	return not (unitExistsWatchers[frame] == nil);
+        return not (unitExistsWatchers[frame] == nil);
 end
 
 local function SecureStateDriverManager_UpdateUnitWatch(frame, doState)
@@ -75,6 +75,8 @@ local function SecureStateDriverManager_UpdateUnitWatch(frame, doState)
         end
     end
 end
+
+local pairs = pairs;
 
 local function SecureStateDriverManager_OnUpdate(self,elapsed)
     timer = timer - elapsed;

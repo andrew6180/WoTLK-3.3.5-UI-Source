@@ -37,7 +37,7 @@ function TextStatusBar_UpdateTextString(textStatusBar)
 
 		if ( ( tonumber(valueMax) ~= valueMax or valueMax > 0 ) and not ( textStatusBar.pauseUpdates ) ) then
 			textStatusBar:Show();
-			if ( value and valueMax > 0 and ( GetCVarBool("statusTextPercentage") or textStatusBar.showPercentage ) ) then
+			if ( value and valueMax > 0 and ( GetCVarBool("statusTextPercentage") or textStatusBar.showPercentage ) and not textStatusBar.showNumeric) then
 				if ( value == 0 and textStatusBar.zeroText ) then
 					textString:SetText(textStatusBar.zeroText);
 					textStatusBar.isZero = 1;
@@ -57,8 +57,10 @@ function TextStatusBar_UpdateTextString(textStatusBar)
 				return;
 			else
 				textStatusBar.isZero = nil;
-				value = TextStatusBar_CapDisplayOfNumericValue(value);
-				valueMax = TextStatusBar_CapDisplayOfNumericValue(valueMax);
+				if ( textStatusBar.capNumericDisplay ) then
+					value = TextStatusBar_CapDisplayOfNumericValue(value);
+					valueMax = TextStatusBar_CapDisplayOfNumericValue(valueMax);
+				end
 				if ( textStatusBar.prefix and (textStatusBar.alwaysPrefix or not (textStatusBar.cvar and GetCVar(textStatusBar.cvar) == "1" and textStatusBar.textLockable) ) ) then
 					textString:SetText(textStatusBar.prefix.." "..value.." / "..valueMax);
 				else
@@ -68,14 +70,19 @@ function TextStatusBar_UpdateTextString(textStatusBar)
 			
 			if ( (textStatusBar.cvar and GetCVar(textStatusBar.cvar) == "1" and textStatusBar.textLockable) or textStatusBar.forceShow ) then
 				textString:Show();
-			elseif ( textStatusBar.lockShow > 0 ) then
+			elseif ( textStatusBar.lockShow > 0 and (not textStatusBar.forceHideText) ) then
 				textString:Show();
 			else
 				textString:Hide();
 			end
 		else
 			textString:Hide();
-			textStatusBar:Hide();
+			textString:SetText("");
+			if ( not textStatusBar.alwaysShow ) then
+				textStatusBar:Hide();
+			else
+				textStatusBar:SetValue(0);
+			end
 		end
 	end
 end
@@ -116,6 +123,7 @@ function ShowTextStatusBarText(bar)
 			bar.TextString:Show();
 		end
 		bar.lockShow = bar.lockShow + 1;
+		TextStatusBar_UpdateTextString(bar);
 	end
 end
 
@@ -134,5 +142,6 @@ function HideTextStatusBarText(bar)
 		else
 			bar.TextString:Hide();
 		end
+		TextStatusBar_UpdateTextString(bar);
 	end
 end

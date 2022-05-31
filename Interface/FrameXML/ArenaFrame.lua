@@ -12,9 +12,13 @@ function ArenaFrame_OnEvent (self, event, ...)
 		if ( event == "BATTLEFIELDS_SHOW" ) then
 			ShowUIPanel(ArenaFrame);
 			if ( ((GetNumPartyMembers() > 0) or (GetNumRaidMembers() > 0)) and IsPartyLeader() and GetCurrentArenaSeason()~=NO_ARENA_SEASON) then
-				ArenaFrame.selection = 1;
+				if ( not ArenaFrame.selection ) then
+					ArenaFrame.selection = 1;
+				end
 			else
-				ArenaFrame.selection = 4;
+				if ( (not ArenaFrame.selection) or (ArenaFrame.selection < 4) ) then
+					ArenaFrame.selection = 4;
+				end
 			end
             
             if ( GetCurrentArenaSeason()==NO_ARENA_SEASON ) then
@@ -39,8 +43,9 @@ function ArenaFrame_OnEvent (self, event, ...)
 	end
 end
 
-function ArenaButton_OnClick(id)
-	getglobal("ArenaZone"..id):LockHighlight();
+function ArenaButton_OnClick(self)
+	local id = self:GetID();
+	_G["ArenaZone"..id]:LockHighlight();
 	ArenaFrame.selection = id;
 	ArenaFrame_Update();
 end
@@ -54,13 +59,16 @@ function ArenaFrame_Update (self)
 	local button, battleType, teamSize;
 	
 	for i=1, MAX_ARENA_BATTLES, 1 do
-		button = getglobal("ArenaZone"..i);
+		button = _G["ArenaZone"..i];
 		battleType = ARENA_RATED;
 		teamSize = i;
 		-- if buttons begin a second set of buttons for casual games, change text elements.
+		button:Enable();
 		if ( i > MAX_ARENA_TEAMS ) then
 			teamSize = teamSize - MAX_ARENA_TEAMS;
 			battleType = ARENA_CASUAL;
+		elseif ( GetCurrentArenaSeason()==NO_ARENA_SEASON ) then
+			button:Disable();
 		end
 		-- build text string to populate each element.
 		button:SetText(format(PVP_TEAMTYPE, ARENA_TEAMS[teamSize].size, ARENA_TEAMS[teamSize].size).." "..battleType);
@@ -104,10 +112,11 @@ function ArenaFrame_Update (self)
 	end
 end
 
-function ArenaFrameJoinButton_OnClick(joinAs)
+function ArenaFrameJoinButton_OnClick(self)
+	local GROUPJOIN_BUTTONID = 2;
 	if ( ArenaFrame.selection < 4 ) then
 		JoinBattlefield(ArenaFrame.selection, 1, 1);
-	elseif ( ArenaFrame.selection > 3  and joinAs ) then
+	elseif ( ArenaFrame.selection > 3 and self:GetID() == GROUPJOIN_BUTTONID ) then
 		JoinBattlefield(ArenaFrame.selection - 3, 1);
 	else
 		JoinBattlefield(ArenaFrame.selection - 3);

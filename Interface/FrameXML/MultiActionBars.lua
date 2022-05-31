@@ -6,14 +6,14 @@ function MultiActionBarFrame_OnLoad (self)
 end
 
 function MultiActionButtonDown (bar, id)
-	local button = getglobal(bar.."Button"..id);
+	local button = _G[bar.."Button"..id];
 	if ( button:GetButtonState() == "NORMAL" ) then
 		button:SetButtonState("PUSHED");
 	end
 end
 
 function MultiActionButtonUp (bar, id)
-	local button = getglobal(bar.."Button"..id);
+	local button = _G[bar.."Button"..id];
 	if ( button:GetButtonState() == "PUSHED" ) then
 		button:SetButtonState("NORMAL");
 		SecureActionButton_OnClick(button, "LeftButton");
@@ -52,30 +52,40 @@ function MultiActionBar_Update ()
 		MultiBarLeft:Hide();
 		VIEWABLE_ACTION_BAR_PAGES[LEFT_ACTIONBAR_PAGE] = 1;
 	end
+	
+	--Adjust VehicleSeatIndicator position
+	if ( VehicleSeatIndicator ) then
+		if ( SHOW_MULTI_ACTIONBAR_3 and SHOW_MULTI_ACTIONBAR_4 ) then
+			VehicleSeatIndicator:SetPoint("TOPRIGHT", MinimapCluster, "BOTTOMRIGHT", -100, -13);
+		elseif ( SHOW_MULTI_ACTIONBAR_3 ) then
+			VehicleSeatIndicator:SetPoint("TOPRIGHT", MinimapCluster, "BOTTOMRIGHT", -62, -13);
+		else
+			VehicleSeatIndicator:SetPoint("TOPRIGHT", MinimapCluster, "BOTTOMRIGHT", 0, -13);
+		end
+	end
 end
 
 function MultiActionBar_ShowAllGrids ()
-	MultiActionBar_UpdateGrid("MultiBarBottomLeft", 1);
-	MultiActionBar_UpdateGrid("MultiBarBottomRight", 1);
-	MultiActionBar_UpdateGrid("MultiBarRight", 1);
-	MultiActionBar_UpdateGrid("MultiBarLeft", 1);
+	MultiActionBar_UpdateGrid("MultiBarBottomLeft", true);
+	MultiActionBar_UpdateGrid("MultiBarBottomRight", true);
+	MultiActionBar_UpdateGrid("MultiBarRight", true);
+	MultiActionBar_UpdateGrid("MultiBarLeft", true);
 end
 
 function MultiActionBar_HideAllGrids ()
-	MultiActionBar_UpdateGrid("MultiBarBottomLeft");
-	MultiActionBar_UpdateGrid("MultiBarBottomRight");
-	MultiActionBar_UpdateGrid("MultiBarRight");
-	MultiActionBar_UpdateGrid("MultiBarLeft");
+	MultiActionBar_UpdateGrid("MultiBarBottomLeft", false);
+	MultiActionBar_UpdateGrid("MultiBarBottomRight", false);
+	MultiActionBar_UpdateGrid("MultiBarRight", false);
+	MultiActionBar_UpdateGrid("MultiBarLeft", false);
 end
 
 function MultiActionBar_UpdateGrid (barName, show)
 	for i=1, NUM_MULTIBAR_BUTTONS do
 		if ( show ) then
-			ActionButton_ShowGrid(getglobal(barName.."Button"..i));
+			ActionButton_ShowGrid(_G[barName.."Button"..i]);
 		else
-			ActionButton_HideGrid(getglobal(barName.."Button"..i));
+			ActionButton_HideGrid(_G[barName.."Button"..i]);
 		end
-		
 	end
 end
 

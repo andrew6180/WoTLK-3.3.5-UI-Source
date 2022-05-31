@@ -1,4 +1,3 @@
-MAX_NUM_SOCKETS = 3;
 UIPanelWindows["ItemSocketingFrame"] =		{ area = "left",	pushable = 0 };
 
 GEM_TYPE_INFO = {};
@@ -35,19 +34,26 @@ end
 
 function ItemSocketingFrame_Update()
 	ItemSocketingFrame.destroyingGem = nil;
+	ItemSocketingFrame.itemIsRefundable = nil;
+	ItemSocketingFrame.itemIsBoundTradeable = nil;
+	if(GetSocketItemRefundable()) then
+		ItemSocketingFrame.itemIsRefundable = true;
+	elseif(GetSocketItemBoundTradeable()) then
+		ItemSocketingFrame.itemIsBoundTradeable = true;
+	end
 
 	local numSockets = GetNumSockets();
-	local name, icon, quality; 
+	local name, icon, quality, gemMatchesSocket; 
 	local socket, socketName;
 	local numNewGems = numSockets;
 	local closedBracket, openBracket;
-	local bracketsOpen, gemColor, gemBorder, gemInfo;
+	local bracketsOpen, gemColor, gemBorder, gemColorText, gemInfo;
 	local numMatches = 0;
 	for i=1, MAX_NUM_SOCKETS do
-		socket = getglobal("ItemSocketingSocket"..i);
+		socket = _G["ItemSocketingSocket"..i];
 		socketName = "ItemSocketingSocket"..i;
-		closedBracket = getglobal(socketName.."BracketFrameClosedBracket");
-		openBracket = getglobal(socketName.."BracketFrameOpenBracket");
+		closedBracket = _G[socketName.."BracketFrameClosedBracket"];
+		openBracket = _G[socketName.."BracketFrameOpenBracket"];
 		if ( i <= numSockets ) then
 			-- See if there's a replacement gem and if not see if there's an existing gem
 			name, icon, gemMatchesSocket = GetNewSocketInfo(i);
@@ -84,7 +90,7 @@ function ItemSocketingFrame_Update()
 			
 			if ( gemColor ~= "" ) then
 				gemInfo = GEM_TYPE_INFO[gemColor];
-				gemBorder = getglobal(socketName.."Background")
+				gemBorder = _G[socketName.."Background"]
 				gemBorder:SetWidth(gemInfo.w);
 				gemBorder:SetHeight(gemInfo.h);
 				gemBorder:SetTexCoord(gemInfo.left, gemInfo.right, gemInfo.top, gemInfo.bottom);
@@ -100,6 +106,13 @@ function ItemSocketingFrame_Update()
 					SetDesaturation(closedBracket, nil);
 					openBracket:SetTexCoord(gemInfo.OBLeft, gemInfo.OBRight, gemInfo.OBTop, gemInfo.OBBottom);
 					closedBracket:SetTexCoord(gemInfo.CBLeft, gemInfo.CBRight, gemInfo.CBTop, gemInfo.CBBottom);
+				end
+				if ( ENABLE_COLORBLIND_MODE == "1" ) then
+					gemColorText = _G[socketName.."Color"];
+					gemColorText:SetText(_G[strupper(gemColor) .. "_GEM"]);
+					gemColorText:Show();
+				else
+					_G[socketName.."Color"]:Hide();
 				end
 			else
 				gemBorder:Hide();

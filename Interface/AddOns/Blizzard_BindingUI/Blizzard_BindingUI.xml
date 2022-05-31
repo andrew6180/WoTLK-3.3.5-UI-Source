@@ -4,7 +4,7 @@
 	<Button name="KeyBindingFrameBindingButtonTemplate" inherits="UIPanelButtonTemplate2" virtual="true">
 		<Scripts>
 			<OnClick>
-				KeyBindingButton_OnClick(self, button);
+				KeyBindingButton_OnClick(self, button, down);
 			</OnClick>
 			<OnLoad>
 				self:RegisterForClicks("AnyUp");
@@ -416,9 +416,7 @@
 						GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 						GameTooltip:SetText(CHARACTER_SPECIFIC_KEYBINDING_TOOLTIP, nil, nil, nil, nil, 1);
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+					<OnLeave function="GameTooltip_Hide"/>
 				</Scripts>
 			</CheckButton>
 			<Button name="KeyBindingFrameDefaultButton" inherits="UIPanelButtonGrayTemplate" text="RESET_TO_DEFAULT">
@@ -436,7 +434,7 @@
 					<OnClick>
 						LoadBindings(DEFAULT_BINDINGS);
 						KeyBindingFrameOutputText:SetText("");
-						KeyBindingFrame.selected = nil;
+						KeyBindingFrame_SetSelected(nil);
 						KeyBindingFrame_Update();
 					</OnClick>
 				</Scripts>
@@ -456,7 +454,7 @@
 					<OnClick>
 						LoadBindings(GetCurrentBindingSet());
 						KeyBindingFrameOutputText:SetText("");
-						KeyBindingFrame.selected = nil;
+						KeyBindingFrame_SetSelected(nil);
 						HideUIPanel(KeyBindingFrame);
 					</OnClick>
 				</Scripts>
@@ -487,7 +485,7 @@
 						end
 						SaveBindings(KeyBindingFrame.which);
 						KeyBindingFrameOutputText:SetText("");
-						KeyBindingFrame.selected = nil;
+						KeyBindingFrame_SetSelected(nil);
 						HideUIPanel(KeyBindingFrame);
 					</OnClick>
 				</Scripts>
@@ -505,17 +503,17 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						local key1, key2 = GetBindingKey(KeyBindingFrame.selected);
+						local key1, key2 = GetBindingKey(KeyBindingFrame.selected, KeyBindingFrame.mode);
 						if ( key1 ) then
-							SetBinding(key1);
+							SetBinding(key1, nil, KeyBindingFrame.mode);
 						end
 						if ( key2 ) then
-							SetBinding(key2);
+							SetBinding(key2, nil, KeyBindingFrame.mode);
 						end
 						if ( key1 and KeyBindingFrame.keyID == 1 ) then
 							KeyBindingFrame_SetBinding(key1, nil, key1);
 							if ( key2 ) then
-								SetBinding(key2, KeyBindingFrame.selected);
+								SetBinding(key2, KeyBindingFrame.selected, KeyBindingFrame.mode);
 							end
 						else
 							if ( key1 ) then
@@ -527,7 +525,7 @@
 						end
 						KeyBindingFrame_Update();
 						-- Button highlighting stuff
-						KeyBindingFrame.selected = nil;
+						KeyBindingFrame_SetSelected(nil);
 						KeyBindingFrame.buttonPressed:UnlockHighlight();
 						KeyBindingFrame_UpdateUnbindKey();
 						KeyBindingFrameOutputText:SetText();
@@ -536,15 +534,9 @@
 			</Button>
 		</Frames>
 		<Scripts>
-			<OnClick>
-				KeyBindingFrame_OnKeyDown(self, button);
-			</OnClick>
-			<OnKeyDown>
-				KeyBindingFrame_OnKeyDown(self, key);
-			</OnKeyDown> 
-			<OnLoad>
-				KeyBindingFrame_OnLoad(self);
-			</OnLoad>
+			<OnClick function="KeyBindingFrame_OnKeyDown"/>
+			<OnKeyDown function="KeyBindingFrame_OnKeyDown"/>
+			<OnLoad function="KeyBindingFrame_OnLoad"/>
 			<OnShow>
 				KeyBindingFrame_OnShow(self);
 				Disable_BagButtons();
@@ -553,12 +545,9 @@
 			<OnHide>
 				KeyBindingFrameOutputText:SetText("");
 				PlaySound("gsTitleOptionExit");
-				ShowUIPanel(GameMenuFrame);
+				ShowUIPanel(GameMenuFrame); 
 				UpdateMicroButtons();
 			</OnHide>
-			<OnMouseWheel>
-				return;
-			</OnMouseWheel>
 		</Scripts>
 	</Button>
 </Ui>

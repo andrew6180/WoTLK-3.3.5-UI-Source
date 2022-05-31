@@ -59,7 +59,7 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						self:SetFrameLevel(self:GetFrameLevel() - 1)
+						LowerFrameLevel(self);
 					</OnLoad>
 				</Scripts>
 				<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>

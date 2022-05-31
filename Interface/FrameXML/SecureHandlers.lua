@@ -8,6 +8,7 @@
 ---------------------------------------------------------------------------
 
 -- Local references to things so that they can't be subverted
+local forceinsecure = forceinsecure;
 local geterrorhandler = geterrorhandler;
 local issecure = issecure;
 local newproxy = newproxy;
@@ -99,7 +100,7 @@ end
 ---------------------------------------------------------------------------
 -- Standard invocation for header executions and child executions
 
-local function SecureHandler_Execute(self, signature, body, ...)
+local function SecureHandler_Self_Execute(self, signature, body, ...)
     if (type(body) ~= "string") then return; end
 
     local selfHandle = GetFrameHandle(self, true);
@@ -132,13 +133,31 @@ end
 
 function SecureHandler_OnSimpleEvent(self, snippetAttr)
     local body = self:GetAttribute(snippetAttr);
-    SecureHandler_Execute(self, "self", body);
+    if (body) then
+        SecureHandler_Self_Execute(self, "self", body);
+    end
 end
 
 function SecureHandler_OnClick(self, snippetAttr, button, down)
     local body = self:GetAttribute(snippetAttr);
-    SecureHandler_Execute(self, "self,button,down",
-                          body, button, down);
+    if (body) then
+        SecureHandler_Self_Execute(self, "self,button,down",
+                                   body, button, down);
+    end
+end
+
+function SecureHandler_OnMouseUpDown(self, snippetAttr, button)
+    local body = self:GetAttribute(snippetAttr);
+    if (body) then
+        SecureHandler_Self_Execute(self, "self,button", body, button);
+    end
+end
+
+function SecureHandler_OnMouseWheel(self, snippetAttr, delta)
+    local body = self:GetAttribute(snippetAttr);
+    if (body) then
+        SecureHandler_Self_Execute(self, "self,delta", body, delta);
+    end
 end
 
 function SecureHandler_StateOnAttributeChanged(self, name, value)
@@ -146,8 +165,8 @@ function SecureHandler_StateOnAttributeChanged(self, name, value)
     if (stateid) then
         local body = self:GetAttribute("_onstate-" .. stateid);
         if (body) then
-            SecureHandler_Execute(self, "self,stateid,newstate",
-                                  body, stateid, value);
+            SecureHandler_Self_Execute(self, "self,stateid,newstate",
+                                       body, stateid, value);
         end
     end
 end
@@ -159,8 +178,8 @@ function SecureHandler_AttributeOnAttributeChanged(self, name, value)
 
     local body = self:GetAttribute("_onattributechanged");
     if (body) then
-        SecureHandler_Execute(self, "self,name,value",
-                              body, name, value);
+        SecureHandler_Self_Execute(self, "self,name,value",
+                                   body, name, value);
     end
 end
 
@@ -192,15 +211,17 @@ local function PickupAny(kind, target, detail, ...)
         PickupSpell(target, detail)
     elseif kind == 'companion' then
         PickupCompanion(target, detail)
+        elseif kind == 'equipmentset' then
+                PickupEquipmentSet(target);
     end
 end
 
-function SecureHandler_OnDragEvent(snippetAttr, self, button)
+function SecureHandler_OnDragEvent(self, snippetAttr, button)
     local body = self:GetAttribute(snippetAttr);
     if (body) then
-        PickupAny( SecureHandler_Execute(self,
-                                         "self,button,kind,value,...",
-                                         body, button, GetCursorInfo()) );
+        PickupAny( SecureHandler_Self_Execute(self,
+                                              "self,button,kind,value,...",
+                                              body, button, GetCursorInfo()) );
     end
 end
 
@@ -520,8 +541,8 @@ local function API_OnAttributeChanged(self, name, value)
             error("Invalid execute body");
             return;
         end
-        -- Most validation is performed by SecureHandler_Execute
-        SecureHandler_Execute(frame, "self", value);
+        -- Most validation is performed by SecureHandler_Self_Execute
+        SecureHandler_Self_Execute(frame, "self", value);
         return;
     end
 
@@ -587,18 +608,13 @@ local function API_OnAttributeChanged(self, name, value)
         end
         local header, preBody, postBody = RemoveWrapper(frame, script);
         if (type(data) == "table") then
-            -- data[1] + issecure() protocol assures that the result is
-            -- tainted so nobody can use this mechanism as a factory for
-            -- untainted string values.
-            if (data[1] == false) then
-                --if (not issecure()) then
-                data[1] = frame;
-                data[2] = script;
-                data[3] = header;
-                data[4] = preBody;
-                data[5] = postBody;
-                --end
-            end
+            forceinsecure();
+            wipe(data);
+            data[1] = frame;
+            data[2] = script;
+            data[3] = header;
+            data[4] = preBody;
+            data[5] = postBody;
         end
         return;
     end
@@ -720,22 +736,27 @@ end
 
 ---------------------------------------------------------------------------
 -- Helper Methods, these are just friendly wrappers for the
--- global functions
+-- global functions.
+
 
 local function SecureHandlerMethod_Execute(self, body)
+    -- Kept as a wrapper for consistency
     return SecureHandlerExecute(self, body);
 end
 
 local function SecureHandlerMethod_WrapScript(self, frame, script,
                                               preBody, postBody)
+    -- Wrapped since args are in different order
     return SecureHandlerWrapScript(frame, script, self, preBody, postBody);
 end
 
 local function SecureHandlerMethod_UnwrapScript(self, frame, script)
+    -- Wrapped since args are in different order
     return SecureHandlerUnwrapScript(frame, script);
 end
 
 local function SecureHandlerMethod_SetFrameRef(self, id, frame)
+    -- Kept as a wrapper for consistency
     return SecureHandlerSetFrameRef(self, id, frame);
 end
 
@@ -745,205 +766,6 @@ function SecureHandler_OnLoad(self)
     self.UnwrapScript = SecureHandlerMethod_UnwrapScript;
     self.SetFrameRef = SecureHandlerMethod_SetFrameRef;
 end
-
----------------------------------------------------------------------------
--- Priority queue implementation for timer callbacks
--- Based on algorithm from "Algorithms 2nd Ed, Robert Sedgewick" pp150
--- This has O(log N) complexity for insert and remove
-
-local floor = math.floor;
-
--- Number of queued indices
-local LOCAL_TimeQueue_Size = 0;
--- Array of sorted data indices
-local LOCAL_TimeQueue_Indices = {};
--- Actual data in triplets of (when, frame, message)
-local LOCAL_TimeQueue_Data = {};
--- Array of free data indices
-local LOCAL_TimeQueue_Free_Indices = {};
--- Number of free indices
-local LOCAL_TimeQueue_Free_Count = 0;
-
--- Time of the 'first' entry in the queue (-1 for no entries)
-local LOCAL_TimeQueue_Min_Time = 0;
-
--- wasEmpty = TimeQueue_Insert(when, frame, body, message)
--- Inserts a new entry to the queue, returns true if the queue was empty
--- beforehand
-local function TimeQueue_Insert(when, frame, body, message)
-    local index = LOCAL_TimeQueue_Indices;
-    local data = LOCAL_TimeQueue_Data;
-
-    LOCAL_TimeQueue_Size = LOCAL_TimeQueue_Size + 1;
-    local dataIndex;
-    if (LOCAL_TimeQueue_Free_Count > 0) then
-        dataIndex = LOCAL_TimeQueue_Free_Indices[LOCAL_TimeQueue_Free_Count];
-        LOCAL_TimeQueue_Free_Indices[LOCAL_TimeQueue_Free_Count] = nil
-        LOCAL_TimeQueue_Free_Count = LOCAL_TimeQueue_Free_Count - 1;
-    else
-        dataIndex = (LOCAL_TimeQueue_Size - 1) * 4 + 1;
-    end
-    data[dataIndex] = when;
-    data[dataIndex + 1] = frame;
-    data[dataIndex + 2] = body;
-    data[dataIndex + 3] = message;
-    index[LOCAL_TimeQueue_Size] = dataIndex;
-
-    if (LOCAL_TimeQueue_Size == 1) then
-        LOCAL_TimeQueue_Min_Time = when;
-        return true;
-    end
-
-    -- begin upheap(k)
-    local k = LOCAL_TimeQueue_Size;
-    local i = index[k];
-    local iv = data[i];
-    local kdiv2 = floor(k / 2);
-    while (kdiv2 > 0) do
-        local ki2 = index[kdiv2];
-        local kv2 = data[ki2];
-        if (kv2 < iv) then break; end
-        index[k] = ki2;
-        k, kdiv2 = kdiv2, floor(kdiv2 / 2);
-    end
-    index[k] = i;
-    if (k == 1) then LOCAL_TimeQueue_Min_Time = iv; end
-    -- end upheap(k)
-end
-
--- when, frame, body, message = TimeQueue_Remove()
--- Removes the next entry from the queue, returning its values
-local function TimeQueue_Remove()
-    if (LOCAL_TimeQueue_Size > 0) then
-        local data = LOCAL_TimeQueue_Data;
-        local index = LOCAL_TimeQueue_Indices;
-
-        local dataIndex = index[1];
-        local when, frame = data[dataIndex], data[dataIndex + 1]
-        local body, message = data[dataIndex + 2], data[dataIndex + 3];
-        -- leave the keys in the table to force it to stay an array
-        data[dataIndex + 1], data[dataIndex + 2] = false, false;
-        data[dataIndex + 3] = false;
-
-        LOCAL_TimeQueue_Free_Count = LOCAL_TimeQueue_Free_Count + 1;
-        LOCAL_TimeQueue_Free_Indices[LOCAL_TimeQueue_Free_Count] = dataIndex;
-
-        index[1] = index[LOCAL_TimeQueue_Size];
-        index[LOCAL_TimeQueue_Size] = nil
-
-        LOCAL_TimeQueue_Size = LOCAL_TimeQueue_Size - 1;
-
-        if (LOCAL_TimeQueue_Size > 0) then
-            -- begin downheap(1)
-            local k = 1;
-            local N = LOCAL_TimeQueue_Size;
-            local Ndiv2 = floor(N / 2);
-            local i = index[k];
-            local v = data[i];
-            while (k <= Ndiv2) do
-                local j = k + k;
-                local ij = index[j];
-                local vj = data[ij];
-                if (j < N) then
-                    local ijplus = index[j + 1];
-                    local vjplus = data[ijplus];
-                    if (vj > vjplus) then
-                        j = j + 1;
-                        ij, vj = ijplus, vjplus;
-                    end
-                end
-                if (v <= vj) then break; end
-                index[k] = ij;
-                if (k == 1) then
-                    LOCAL_TimeQueue_Min_Time = vj;
-                end
-                k = j;
-            end
-            index[k] = i;
-            -- end downheap(1)
-        else
-            LOCAL_TimeQueue_Min_Time = -1;
-
-            -- purge the free queue if it's getting large
-            if (LOCAL_TimeQueue_Free_Count > 50) then
-                wipe(LOCAL_TimeQueue_Data);
-                for i = 1, LOCAL_TimeQueue_Free_Count do
-                    LOCAL_TimeQueue_Free_Indices[i] = nil;
-                end
-                LOCAL_TimeQueue_Free_Count = 0;
-            end
-        end
-        return when, frame, body, message
-    end
-end
-
-local LOCAL_OnUpdate_Time = GetTime();
-local LOCAL_OnUpdate_Frames = {};
-local LOCAL_OnUpdate_Any_New = nil;
-local LOCAL_OnUpdate_New_Frames = {};
-local LOCAL_OnUpdate_Active = false;
-
-local function SecureHandler_Update_Dispatch(self, elapsed)
-    LOCAL_OnUpdate_Time = GetTime();
-    if (not LOCAL_OnUpdate_Active) then
-        return;
-    end
-
-    local now = LOCAL_OnUpdate_Time;
-
-    while (LOCAL_TimeQueue_Min_Time <= now and LOCAL_TimeQueue_Size > 0) do
-        local when, frame, body, message = TimeQueue_Remove();
-        if (when and frame) then
-            if (body and type(body) == "string") then
-                local env = LOCAL_Managed_Environments[frame];
-                local controlHandle = LOCAL_Managed_Controls[env];
-                local selfHandle = GetFrameHandle(frame, true);
-                if (selfHandle) then
-                    local ok, err =
-                        pcall(CallRestrictedClosure, "self,when,message",
-                              env, self, body, selfHandle, when, message);
-                    if (not ok) then
-                        SoftError(err);
-                    end
-                end
-            end
-        end
-    end
-
-    -- Transfer new OnUpdate frames to the active list
-    if (LOCAL_OnUpdate_Any_New) then
-        for frame, body in pairs(LOCAL_OnUpdate_New_Frames) do
-            LOCAL_OnUpdate_Frames[frame] = body;
-            LOCAL_OnUpdate_New_Frames[frame] = nil;
-        end
-        LOCAL_OnUpdate_Any_New = nil;
-    end
-
-    -- Dispatch OnUpdate calls
-    local any = false;
-    for frame, body in pairs(LOCAL_OnUpdate_Frames) do
-        any = true;
-        local env = LOCAL_Managed_Environments[frame];
-        local controlHandle = LOCAL_Managed_Controls[env];
-        local selfHandle = GetFrameHandle(frame, true);
-        if (selfHandle) then
-            local ok, err =
-                pcall(CallRestrictedClosure, "self,elapsed,when",
-                      env, controlHandle, body, selfHandle, elapsed, now);
-            if (not ok) then
-                SoftError(err);
-            end
-        end
-    end
-
-    if (not any and LOCAL_TimeQueue_Size == 0
-        and not LOCAL_OnUpdate_Any_New) then
-        LOCAL_OnUpdate_Active = false;
-    end
-end
-
-LOCAL_API_Frame:SetScript("OnUpdate", SecureHandler_Update_Dispatch);
-LOCAL_API_Frame:Show();
 
 ---------------------------------------------------------------------------
 -- Control handle methods
@@ -1037,7 +859,7 @@ local function ChildUpdate_Helper(environment, controlHandle,
                 if (selfHandle) then
                     CallRestrictedClosure("self,scriptid,message",
                                           environment, controlHandle, body,
-                                          selfHandle, message, scriptid);
+                                          selfHandle, scriptid, message);
                 end
             end
         end
@@ -1054,84 +876,11 @@ function LOCAL_CTRL:ChildUpdate(snippetid, message)
     ChildUpdate_Helper(env, self, snippetid, message, frame:GetChildren());
 end
 
-function LOCAL_CTRL:SetTimer(elapsed, message, body)
-    local frame = LOCAL_Managed_Control_Frames[self];
-    if (not frame) then
-        error("Invalid control handle");
-        return;
-    end
-    if (elapsed < 0) then elapsed = 0; end
-    if (body == nil) then
-        body = frame:GetAttribute("_ontimer");
-        if (body == nil) then
-            return;
-        end
-        if (type(body) ~= "string") then
-            error("Invalid _ontimer attribute body");
-            return;
-        end
-    elseif (type(body) ~= "string") then
-        error("Invalid body");
-        return;
-    end
-    local when = elapsed + LOCAL_OnUpdate_Time;
-    if (TimeQueue_Insert(when, frame, body, message)) then
-        LOCAL_OnUpdate_Active = true;
-    end
-    return true;
-end
-
-function LOCAL_CTRL:GetTime()
-    return LOCAL_OnUpdate_Time;
-end
-
-function LOCAL_CTRL:SetAnimating(flag, body)
-    local frame = LOCAL_Managed_Control_Frames[self];
-    if (not frame) then
-        error("Invalid control handle");
-        return;
-    end
-    if (flag and body == nil) then
-        body = frame:GetAttribute("_onupdate");
-        if (body == nil) then
-            flag = nil;
-        end
-    end
-    if (flag) then
-        if (type(body) ~= "string") then
-            error("Invalid body attribute");
-        end
-
-        if (LOCAL_OnUpdate_Frames[frame]) then
-            LOCAL_OnUpdate_Frames[frame] = body;
-        else
-            LOCAL_OnUpdate_New_Frames[frame] = body;
-            LOCAL_OnUpdate_Any_New = true;
-            LOCAL_OnUpdate_Active = true;
-        end
-        return;
-    end
-
-    LOCAL_OnUpdate_Frames[frame] = nil;
-    if (LOCAL_OnUpdate_Any_New) then
-        LOCAL_OnUpdate_New_Frames[frame] = nil;
-    end
-end
-
-function LOCAL_CTRL:IsAnimating()
-    local frame = LOCAL_Managed_Control_Frames[self];
-    if (not frame) then
-        error("Invalid control handle");
-        return;
-    end
-    return ( LOCAL_OnUpdate_Frames[frame] or
-            (LOCAL_OnUpdate_Any_New and LOCAL_OnUpdate_New_Frames[frame]) );
-end
-
 local function CallMethod_inner(frame, methodName, ...)
     local method = frame[methodName];
-    -- Refuse to run secure code
-    if (issecure() or type(method) ~= "string") then
+    -- Ensure code isn't run securely
+    forceinsecure();
+    if (type(method) ~= "function") then
         error("Invalid method '" .. methodName .. "'");
         return;
     end

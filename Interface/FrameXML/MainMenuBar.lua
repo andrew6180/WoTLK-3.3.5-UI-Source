@@ -1,4 +1,4 @@
-local MAINMENU_SLIDETIME = 0.5;
+local MAINMENU_SLIDETIME = 0.30;
 local MAINMENU_GONEYPOS = 130;	--Distance off screen for MainMenuBar to be completely hidden
 local MAINMENU_XPOS = 0;
 local MAINMENU_VEHICLE_ENDCAPPOS = 548;
@@ -10,63 +10,52 @@ function MainMenuExpBar_Update()
 	MainMenuExpBar:SetValue(currXP);
 end
 
-function MainMenuBar_OnUpdate(self, elapsed)
-	if self.animating then
-		MainMenuBar_ContinueAnimation(self, elapsed)
-	end
-end
-
-local function MainMenuBar_GetAnimPos(self, fraction, reverse)
-	if ( reverse ) then
-		fraction = 1 - fraction;
-	end
-	
+local function MainMenuBar_GetAnimPos(self, fraction)	
 	return "BOTTOM", UIParent, "BOTTOM", MAINMENU_XPOS, (sin(fraction*90+90)-1) * MAINMENU_GONEYPOS;
 end
 
- function MainMenuBar_GetRightABPos(self, fraction, reverse)
-	if ( reverse ) then
-		fraction = 1 - fraction;
+local function MainMenuBar_GetRightABPos(self, fraction)
+
+	local finaloffset;
+	if ( SHOW_MULTI_ACTIONBAR_3 and SHOW_MULTI_ACTIONBAR_4 ) then
+		finaloffset = 100;
+	else
+		finaloffset = 62;
 	end
 	
-	return "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", (sin(fraction*90)) * 100, 98;
+	return "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", (sin(fraction*90)) * finaloffset, 98;
 end
 
-function MainMenuBar_ContinueAnimation(self, elapsed)
-	local animtable = self.animation
-	if ( animtable.slideTimer and (animtable.slideTimer < animtable.timeToSlider)) then	--Should be animating
-		animtable.slideTimer = animtable.slideTimer + elapsed
-		self:SetPoint(animtable.posFunc(self, animtable.slideTimer/animtable.timeToSlider, animtable.mode))
-	else	--Just finished animating
-		self:SetPoint(animtable.posFunc(self, 1,animtable.mode))
-		self.animating = false;
-		if ( animtable.postFunc ) then
-			animtable.postFunc(self);
-		end
-	end
-	
-end
+local function MainMenuBar_GetSeatIndicatorPos(self, fraction)
 
-function MainMenuBar_SetUpAnimation(frame, direction, duration, positionFunc, postFunc, setUpOnUpdate)
-	if ( not frame.animation ) then
-		frame.animation = {}
+	local finaloffset;
+	if ( SHOW_MULTI_ACTIONBAR_3 and SHOW_MULTI_ACTIONBAR_4 ) then
+		finaloffset = -100;
+	elseif ( SHOW_MULTI_ACTIONBAR_3 ) then
+		finaloffset = -62;
+	else
+		finaloffset = 0;
 	end
-	frame.animation.slideTimer = 0;
 	
-	frame.animation.mode = direction;
-	frame.animation.timeToSlider = duration;
-	frame.animation.posFunc = positionFunc;
-	frame.animation.postFunc = postFunc;
-	frame.animating = true;
-	
-	if ( setUpOnUpdate ) then
-		frame:SetScript("OnUpdate", MainMenuBar_OnUpdate)
-	end
+	return "TOPRIGHT", MinimapCluster, "BOTTOMRIGHT", (cos(fraction*90)) * finaloffset, -13;
 end
 
 function MainMenuBar_AnimFinished(self)
 	MainMenuBar.busy = false;
-	if ( MainMenuBar.animComplete ) then
+	if ( GetBonusBarOffset() > 0 ) then
+		ShowBonusActionBar(true);
+	else
+		HideBonusActionBar(true);
+	end
+	MainMenuBar_UpdateArt(self);
+end
+
+function MainMenuBar_UnlockAB(self)
+	MultiBarRight.ignoreFramePositionManager = nil;
+end
+
+function MainMenuBar_UpdateArt(self)
+	if ( MainMenuBar.animComplete and not MainMenuBar.busy) then
 		if ( UnitHasVehicleUI("player") ) then
 			MainMenuBar_ToVehicleArt(self);
 		else
@@ -79,8 +68,28 @@ function MainMenuBar_AnimFinished(self)
 	end
 end
 
+local AnimDataTable = {
+	MenuBar_Slide = {
+		totalTime = MAINMENU_SLIDETIME,
+		updateFunc = "SetPoint",
+		getPosFunc = MainMenuBar_GetAnimPos,
+	},
+	ActionBar_Slide = {
+		totalTime = MAINMENU_SLIDETIME,
+		updateFunc = "SetPoint",
+		getPosFunc = MainMenuBar_GetRightABPos,
+	},
+	SeatIndicator_Slide = {
+		totalTime = MAINMENU_SLIDETIME,
+		updateFunc = "SetPoint",
+		getPosFunc = MainMenuBar_GetSeatIndicatorPos,
+	},
+}
+
 function MainMenuBar_ToVehicleArt(self)
 	MainMenuBar.state = "vehicle";
+	
+	SetUpAnimation(VehicleMenuBar, AnimDataTable.MenuBar_Slide, nil, true);
 	
 	MultiBarLeft:Hide();
 	MultiBarRight:Hide();
@@ -88,61 +97,76 @@ function MainMenuBar_ToVehicleArt(self)
 	MultiBarBottomRight:Hide();
 	
 	MainMenuBar:Hide();
-	VehicleMenuBar:SetPoint(MainMenuBar_GetAnimPos(VehicleMenuBar, 0, true))
-	VehicleMenuBar_SetSkin(VehicleMenuBar.skin, IsVehicleAimAngleAdjustable());
+	VehicleMenuBar:SetPoint(MainMenuBar_GetAnimPos(VehicleMenuBar, 1))
 	VehicleMenuBar:Show();
-	MainMenuBar.busy = false;
 	PossessBar_Update(true);
-	if ( GetBonusBarOffset() > 0 ) then
-		ShowBonusActionBar(true);
-	else
-		HideBonusActionBar(true);
-	end
+	ShowBonusActionBar(true);	--Now, when we are switching to vehicle art we will ALWAYS be using the BonusActionBar
 	UIParent_ManageFramePositions();	--This is called in PossessBar_Update, but it doesn't actually do anything but change an attribute, so it is worth keeping	
 	
-	MainMenuBar_SetUpAnimation(VehicleMenuBar,true, MAINMENU_SLIDETIME, MainMenuBar_GetAnimPos, nil, true);
+	VehicleMenuBar_SetSkin(VehicleMenuBar.skin, IsVehicleAimAngleAdjustable());
 end
 
 function MainMenuBar_ToPlayerArt(self)
 	MainMenuBar.state = "player";
 	
-	VehicleMenuBar_MoveMicroButtons();
+	MultiActionBar_Update();
+	
+	MultiBarRight:SetPoint(MainMenuBar_GetRightABPos(MultiBarRight, 1));
+	
+	SetUpAnimation(MainMenuBar, AnimDataTable.MenuBar_Slide, nil, true);
+	SetUpAnimation(MultiBarRight, AnimDataTable.ActionBar_Slide, MainMenuBar_UnlockAB, true);
+	SetUpAnimation(VehicleSeatIndicator, AnimDataTable.SeatIndicator_Slide, nil, true);
+	
+	
 	
 	VehicleMenuBar:Hide();
-	VehicleMenuBar_ReleaseSkins();
+	
 	
 	MainMenuBar:Show();
-	MultiActionBar_Update()
-	
-	MainMenuBar.busy = false
+
 	PossessBar_Update(true);
 	if ( GetBonusBarOffset() > 0 ) then
 		ShowBonusActionBar(true);
 	else
 		HideBonusActionBar(true);
 	end
-	UIParent_ManageFramePositions()	--This is called in PossessBar_Update, but it doesn't actually do anything but change an attribute, so it is worth keeping	
+	--UIParent_ManageFramePositions()	--This is called in PossessBar_Update
 	MainMenuBarVehicleLeaveButton_Update();
-	MainMenuBar_SetUpAnimation(MainMenuBar,true, MAINMENU_SLIDETIME, MainMenuBar_GetAnimPos)
+	
+	VehicleMenuBar_MoveMicroButtons();
+	VehicleMenuBar_ReleaseSkins();
+end
+
+function MainMenuBarVehicleLeaveButton_OnLoad(self)
+	self:RegisterEvent("UPDATE_BONUS_ACTIONBAR");
+	self:RegisterEvent("UPDATE_MULTI_CAST_ACTIONBAR");
+	self:RegisterEvent("VEHICLE_UPDATE");
+end
+
+function MainMenuBarVehicleLeaveButton_OnEvent(self, event, ...)
+	MainMenuBarVehicleLeaveButton_Update();
 end
 
 function MainMenuBarVehicleLeaveButton_Update()
 	if ( CanExitVehicle() ) then
 		MainMenuBarVehicleLeaveButton:ClearAllPoints();
 		if ( IsPossessBarVisible() ) then
-			MainMenuBarVehicleLeaveButton:SetPoint("LEFT", PossessButton2, "RIGHT", 10, 0);
+			MainMenuBarVehicleLeaveButton:SetPoint("LEFT", PossessButton2, "RIGHT", 30, 0);
 		elseif ( GetNumShapeshiftForms() > 0 ) then
-			MainMenuBarVehicleLeaveButton:SetPoint("LEFT", "ShapeshiftButton"..GetNumShapeshiftForms(), "RIGHT", 10, 0);
+			MainMenuBarVehicleLeaveButton:SetPoint("LEFT", "ShapeshiftButton"..GetNumShapeshiftForms(), "RIGHT", 30, 0);
+		elseif ( HasMultiCastActionBar() ) then
+			MainMenuBarVehicleLeaveButton:SetPoint("LEFT", MultiCastActionBarFrame, "RIGHT", 30, 0);
 		else
 			MainMenuBarVehicleLeaveButton:SetPoint("LEFT", PossessBarFrame, "LEFT", 10, 0);
 		end
 		MainMenuBarVehicleLeaveButton:Show();
+		ShowPetActionBar(true);
 	else
 		MainMenuBarVehicleLeaveButton:Hide();
+		ShowPetActionBar(true);
 	end
-	
+
 	UIParent_ManageFramePositions();
-		
 end
 
 function MainMenuBar_OnLoad(self)
@@ -161,24 +185,60 @@ function MainMenuBar_OnLoad(self)
 	MainMenuBarPageNumber:SetText(GetActionBarPage());
 end
 
+local firstEnteringWorld = true;
 function MainMenuBar_OnEvent(self, event, ...)
-	local arg1, arg2, arg3, arg4 = ...;
+	local arg1, arg2, arg3, arg4, arg5 = ...;
 	if ( event == "ACTIONBAR_PAGE_CHANGED" ) then
 		MainMenuBarPageNumber:SetText(GetActionBarPage());
 	elseif ( event == "KNOWN_CURRENCY_TYPES_UPDATE" or event == "CURRENCY_DISPLAY_UPDATE" ) then
-		if ( not GetCVarBool("showTokenFrame") ) then
-			-- Show Tutorial and show the token frame button somehow
-			--FIX ME!!!! when we know how to access the token frame
-			SetCVar("showTokenFrame", 1);
+		local showTokenFrame, showTokenFrameHonor = GetCVarBool("showTokenFrame"), GetCVarBool("showTokenFrameHonor");
+		if ( not showTokenFrame or not showTokenFrameHonor ) then
+			local name, isHeader, isExpanded, isUnused, isWatched, count, icon, extraCurrencyType;
+			local hasPVPTokens, hasNormalTokens;
+			for index=1, GetCurrencyListSize() do
+				name, isHeader, isExpanded, isUnused, isWatched, count, extraCurrencyType, icon = GetCurrencyListInfo(index);
+				if ( (not isHeader) and (extraCurrencyType > 0) and (count>0) ) then
+					hasPVPTokens = true;
+				elseif ( (not isHeader) and (extraCurrencyType <= 0) and (count>0) ) then
+					hasNormalTokens = true;
+				end
+			end
+			if ( (not showTokenFrame) and (hasNormalTokens) ) then
+				SetCVar("showTokenFrame", 1);
+				if ( not CharacterFrame:IsVisible() ) then
+					SetButtonPulse(CharacterMicroButton, 60, 1);
+				end
+				if ( not TokenFrame:IsVisible() ) then
+					SetButtonPulse(CharacterFrameTab5, 60, 1);
+				end
+			end
+			if ( (not showTokenFrameHonor) and (hasPVPTokens) ) then
+				SetCVar("showTokenFrameHonor", 1);
+				if ( not CharacterFrame:IsVisible() ) then
+					SetButtonPulse(CharacterMicroButton, 60, 1);
+				end
+				if ( not TokenFrame:IsVisible() ) then
+					SetButtonPulse(CharacterFrameTab5, 60, 1);
+				end
+			end
+			if ( hasNormalTokens or hasPVPTokens or showTokenFrame or showTokenFrameHonor ) then
+				TokenFrame_LoadUI();
+				TokenFrame_Update();
+				BackpackTokenFrame_Update();
+			else
+				CharacterFrameTab5:Hide();
+			end
+		else
+			TokenFrame_LoadUI();
+			TokenFrame_Update();
+			BackpackTokenFrame_Update();
 		end
-		TokenFrame_LoadUI();
-		TokenFrame_Update();
-		BackpackTokenFrame_Update();
 	elseif ( event == "PLAYER_ENTERING_WORLD" ) then
 		MainMenuBar_UpdateKeyRing();
-		if ( GetCVarBool("showTokenFrame") ) then
-			TokenFrame_LoadUI();
+		if ( not firstEnteringWorld ) then
+			MainMenuBar_ToPlayerArt();
 		end
+		firstEnteringWorld = false;
 	elseif ( event == "BAG_UPDATE" ) then
 		if ( not GetCVarBool("showKeyring") ) then
 			if ( HasKey() ) then
@@ -190,35 +250,30 @@ function MainMenuBar_OnEvent(self, event, ...)
 		end
 	elseif ( (event == "UNIT_ENTERED_VEHICLE") and (arg1=="player") ) then
 		MainMenuBar.animComplete = true;
-		if ( not MainMenuBar.busy ) then
-			MainMenuBar_AnimFinished(self);
-		end
+		MainMenuBar_UpdateArt(self);
 	elseif ( (event == "UNIT_EXITED_VEHICLE") and (arg1=="player") )then
-		MainMenuBar.busy = false;
-		if ( MainMenuBar.state ~= "player" ) then
-			MainMenuBar_SetUpAnimation(VehicleMenuBar, false, MAINMENU_SLIDETIME, MainMenuBar_GetAnimPos, MainMenuBar_ToPlayerArt, true);
-			MainMenuBar_SetUpAnimation(MultiBarRight, true, MAINMENU_SLIDETIME, MainMenuBar_GetRightABPos, nil, true);
-		else
-			if ( GetBonusBarOffset() > 0 ) then
-				ShowBonusActionBar();
-			else
-				HideBonusActionBar();
-			end
-		end
+		MainMenuBar.animComplete = true;
+		MainMenuBar_UpdateArt(self);
 	elseif ( (event == "UNIT_ENTERING_VEHICLE") and (arg1=="player") ) then
 		MainMenuBar.busy = true;
 		MainMenuBar.animComplete = false;
 		VehicleMenuBar.skin = arg3;
 		if ( arg2 ) then	--We are going to show a vehicle UI
 			if ( MainMenuBar.state == "vehicle" ) then
-				MainMenuBar_SetUpAnimation(VehicleMenuBar, false, MAINMENU_SLIDETIME, MainMenuBar_GetAnimPos, MainMenuBar_AnimFinished);
+				MultiBarRight.ignoreFramePositionManager = true;
+				SetUpAnimation(VehicleMenuBar, AnimDataTable.MenuBar_Slide, MainMenuBar_AnimFinished, false);
 			else
-			MainMenuBar_SetUpAnimation(MultiBarRight, false, MAINMENU_SLIDETIME, MainMenuBar_GetRightABPos, nil, true);
-			MainMenuBar_SetUpAnimation(MainMenuBar, false, MAINMENU_SLIDETIME, MainMenuBar_GetAnimPos, MainMenuBar_AnimFinished);
+				MainMenuBar.state = "vehicle";
+				MultiBarRight.ignoreFramePositionManager = true;
+				SetUpAnimation(MultiBarRight, AnimDataTable.ActionBar_Slide, nil, false);
+				SetUpAnimation(MainMenuBar, AnimDataTable.MenuBar_Slide, MainMenuBar_AnimFinished, false);
+				SetUpAnimation(VehicleSeatIndicator, AnimDataTable.SeatIndicator_Slide, nil, false);
 			end
 		else
 			if ( MainMenuBar.state == "vehicle" ) then
-				MainMenuBar_SetUpAnimation(VehicleMenuBar, false, MAINMENU_SLIDETIME, MainMenuBar_GetAnimPos, MainMenuBar_AnimFinished);
+				MultiBarRight.ignoreFramePositionManager = true;
+				SetUpAnimation(VehicleMenuBar, AnimDataTable.MenuBar_Slide, MainMenuBar_AnimFinished, false);
+				--MainMenuBar_SetUpAnimation(MultiBarRight, true, MAINMENU_SLIDETIME, MainMenuBar_GetRightABPos, nil, true);
 			else
 				MainMenuBar.busy = false;
 				MainMenuBar.animComplete = true;
@@ -226,8 +281,19 @@ function MainMenuBar_OnEvent(self, event, ...)
 			end
 		end
 	elseif ( (event == "UNIT_EXITING_VEHICLE") and (arg1=="player") ) then
-		MainMenuBarVehicleLeaveButton_Update();
-		MainMenuBar.busy = true;
+		if ( MainMenuBar.state ~= "player" ) then
+			MainMenuBar.busy = true;
+			MainMenuBar.animComplete = false;
+			MultiBarRight.ignoreFramePositionManager = true;
+			SetUpAnimation(VehicleMenuBar, AnimDataTable.MenuBar_Slide, MainMenuBar_AnimFinished, false);
+		else
+			if ( GetBonusBarOffset() > 0 ) then
+				ShowBonusActionBar();
+			else
+				HideBonusActionBar();
+			end
+		end
+		
 	end
 end
 
@@ -274,8 +340,8 @@ function ExhaustionTick_OnEvent(self, event, ...)
 			end
 		end
 
-		-- Hide exhaustion tick if player is max level and the reputation watch bar is shown
-		if ( UnitLevel("player") == MAX_PLAYER_LEVEL and ReputationWatchBar:IsShown() ) then
+		-- Hide exhaustion tick if player is max level or XP is turned off
+		if ( UnitLevel("player") == MAX_PLAYER_LEVEL or IsXPUserDisabled() ) then
 			ExhaustionTick:Hide();
 		end
 	end
@@ -292,7 +358,7 @@ function ExhaustionTick_OnEvent(self, event, ...)
 		end
 
 	end
-	if ( ReputationWatchBar:IsShown() and not MainMenuExpBar:IsShown() ) then
+	if ( not MainMenuExpBar:IsShown() ) then
 		ExhaustionTick:Hide();
 	end
 end
@@ -336,8 +402,13 @@ function ExhaustionToolTipText()
 	if ( GetTimeToWellRested() ) then
 		exhaustionCountdown = GetTimeToWellRested() / 60;
 	end
+	
+	local currXP = UnitXP("player");
+	local nextXP = UnitXPMax("player");
+	local percentXP = math.ceil(currXP/nextXP*100);
 
-	local tooltipText = format(EXHAUST_TOOLTIP1, exhaustionStateName, exhaustionStateMultiplier);
+	local XPText = format( XP_TEXT, currXP, nextXP, percentXP );
+	local tooltipText = XPText..format(EXHAUST_TOOLTIP1, exhaustionStateName, exhaustionStateMultiplier);
 	local append = nil;
 	if ( IsResting() ) then
 		if ( exhaustionThreshold and exhaustionCountdown ) then
@@ -417,7 +488,7 @@ end
 
 function MainMenuBarPerformanceBarFrame_OnEnter(self)
 	local string = "";
-	local i=0; j=0; k=0;
+	local i, j, k = 0, 0, 0;
 
 	GameTooltip_SetDefaultAnchor(GameTooltip, self);
 	
@@ -481,6 +552,8 @@ function MainMenuBarPerformanceBarFrame_OnEnter(self)
 		if ( SHOW_NEWBIE_TIPS == "1" ) then
 			GameTooltip:AddLine(NEWBIE_TOOLTIP_MEMORY, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1);
 		end
+		
+		local size;
 		for i=1, NUM_ADDONS_TO_DISPLAY, 1 do
 			if ( topAddOns[i].value == 0 ) then
 				break;

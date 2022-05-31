@@ -7,13 +7,13 @@
 				ActionButton_OnLoad(self);
 			</OnLoad>
 			<OnAttributeChanged>
-				ActionButton_UpdateAction(self);
+				ActionButton_UpdateAction(self, name, value);
 			</OnAttributeChanged>
 			<OnEvent>
 				ActionButton_OnEvent(self, event, ...);
 			</OnEvent>
 			<PostClick>
-				ActionButton_UpdateState(self);
+				ActionButton_UpdateState(self, button, down);
 			</PostClick>
 			<OnDragStart>
 				if ( LOCK_ACTIONBAR ~= "1" or IsModifiedClick("PICKUPACTION") ) then

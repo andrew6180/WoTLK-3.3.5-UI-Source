@@ -1,4 +1,3 @@
-GLUEDROPDOWNMENU_MAXBUTTONS = 32;
 GLUEDROPDOWNMENU_MAXLEVELS = 3;
 GLUEDROPDOWNMENU_BUTTON_HEIGHT = 16;
 GLUEDROPDOWNMENU_BORDER_HEIGHT = 15;
@@ -24,12 +23,12 @@ function GlueDropDownMenu_Initialize(frame, initFunction, displayMode, level)
 	-- Hide all the buttons
 	local button, dropDownList;
 	for i = 1, GLUEDROPDOWNMENU_MAXLEVELS, 1 do
-		dropDownList = getglobal("DropDownList"..i);
+		dropDownList = _G["DropDownList"..i];
 		if ( i >= GLUEDROPDOWNMENU_MENU_LEVEL or frame:GetName() ~= GLUEDROPDOWNMENU_OPEN_MENU ) then
 			dropDownList.numButtons = 0;
 			dropDownList.maxWidth = 0;
-			for j=1, GLUEDROPDOWNMENU_MAXBUTTONS, 1 do
-				button = getglobal("DropDownList"..i.."Button"..j);
+			for j=1, dropDownList.maxButtons, 1 do
+				button = _G["DropDownList"..i.."Button"..j];
 				button:Hide();
 			end
 		end
@@ -44,16 +43,16 @@ function GlueDropDownMenu_Initialize(frame, initFunction, displayMode, level)
 
 	-- Change appearance based on the displayMode
 	if ( displayMode == "MENU" ) then
-		getglobal(frame:GetName().."Left"):Hide();
-		getglobal(frame:GetName().."Middle"):Hide();
-		getglobal(frame:GetName().."Right"):Hide();
-		getglobal(frame:GetName().."ButtonNormalTexture"):SetTexture("");
-		getglobal(frame:GetName().."ButtonDisabledTexture"):SetTexture("");
-		getglobal(frame:GetName().."ButtonPushedTexture"):SetTexture("");
-		getglobal(frame:GetName().."ButtonHighlightTexture"):SetTexture("");
-		getglobal(frame:GetName().."Button"):ClearAllPoints();
-		getglobal(frame:GetName().."Button"):SetPoint("LEFT", frame:GetName().."Text", "LEFT", -9, 0);
-		getglobal(frame:GetName().."Button"):SetPoint("RIGHT", frame:GetName().."Text", "RIGHT", 6, 0);
+		_G[frame:GetName().."Left"]:Hide();
+		_G[frame:GetName().."Middle"]:Hide();
+		_G[frame:GetName().."Right"]:Hide();
+		_G[frame:GetName().."ButtonNormalTexture"]:SetTexture("");
+		_G[frame:GetName().."ButtonDisabledTexture"]:SetTexture("");
+		_G[frame:GetName().."ButtonPushedTexture"]:SetTexture("");
+		_G[frame:GetName().."ButtonHighlightTexture"]:SetTexture("");
+		_G[frame:GetName().."Button"]:ClearAllPoints();
+		_G[frame:GetName().."Button"]:SetPoint("LEFT", frame:GetName().."Text", "LEFT", -9, 0);
+		_G[frame:GetName().."Button"]:SetPoint("RIGHT", frame:GetName().."Text", "RIGHT", 6, 0);
 		frame.displayMode = "MENU";
 	end
 
@@ -120,6 +119,19 @@ info.tooltipText = [nil, STRING] -- Text of the tooltip shown on mouseover
 info.justifyH = [nil, "CENTER"] -- Justify button text
 ]]--
 
+local GlueDropDownMenu_ButtonInfo = {};
+
+function GlueDropDownMenu_CreateInfo()
+	-- Reuse the same table to prevent memory churn
+	local info = GlueDropDownMenu_ButtonInfo;
+
+	for k,v in pairs(info) do
+		info[k] = nil;
+	end
+
+	return info;
+end
+
 function GlueDropDownMenu_AddButton(info, level)
 	--[[
 	Might to uncomment this if there are performance issues 
@@ -131,31 +143,31 @@ function GlueDropDownMenu_AddButton(info, level)
 		level = 1;
 	end
 	
-	local listFrame = getglobal("DropDownList"..level);
+	local listFrame = _G["DropDownList"..level];
 	local listFrameName = listFrame:GetName();
 	local index = listFrame.numButtons + 1;
 	local width;
-
-	-- If too many buttons error out
-	if ( index > GLUEDROPDOWNMENU_MAXBUTTONS ) then
-		message("Too many buttons in GlueDropDownMenu: "..GLUEDROPDOWNMENU_OPEN_MENU);
-		return;
-	end
 
 	-- If too many levels error out
 	if ( level > GLUEDROPDOWNMENU_MAXLEVELS ) then
 		message("Too many levels in GlueDropDownMenu: "..GLUEDROPDOWNMENU_OPEN_MENU);
 		return;
 	end
+
+	-- If not enough buttons then create one!
+	if ( index > listFrame.maxButtons ) then
+		CreateFrame("BUTTON", listFrameName .. "Button" .. index, listFrame, "GlueDropDownMenuButtonTemplate"):SetID(index);
+		listFrame.maxButtons = index;
+	end
 	
 	-- Set the number of buttons in the listframe
 	listFrame.numButtons = index;
 	
-	local button = getglobal(listFrameName.."Button"..index);
-	local normalText = getglobal(button:GetName().."NormalText");
+	local button = _G[listFrameName.."Button"..index];
+	local normalText = _G[button:GetName().."NormalText"];
 	-- This button is used to capture the mouse OnEnter/OnLeave events if the dropdown button is disabled, since a disabled button doesn't receive any events
 	-- This is used specifically for drop down menu time outs
-	local invisibleButton = getglobal(button:GetName().."InvisibleButton");
+	local invisibleButton = _G[button:GetName().."InvisibleButton"];
 	
 	-- Default settings
 	button:SetDisabledFontObject(GlueFontDisableSmallLeft);
@@ -234,9 +246,9 @@ function GlueDropDownMenu_AddButton(info, level)
 	
 	-- Show the expand arrow if it has one
 	if ( info.hasArrow ) then
-		getglobal(listFrameName.."Button"..index.."ExpandArrow"):Show();
+		_G[listFrameName.."Button"..index.."ExpandArrow"]:Show();
 	else
-		getglobal(listFrameName.."Button"..index.."ExpandArrow"):Hide();
+		_G[listFrameName.."Button"..index.."ExpandArrow"]:Hide();
 	end
 	button.hasArrow = info.hasArrow;
 	
@@ -258,7 +270,7 @@ function GlueDropDownMenu_AddButton(info, level)
 	end
 
 	-- Adjust offset if displayMode is menu
-	local frame = getglobal(GLUEDROPDOWNMENU_OPEN_MENU);
+	local frame = _G[GLUEDROPDOWNMENU_OPEN_MENU];
 	if ( frame and frame.displayMode == "MENU" ) then
 		if ( not info.notCheckable ) then
 			xPos = xPos - 6;
@@ -267,7 +279,7 @@ function GlueDropDownMenu_AddButton(info, level)
 	
 	-- If no open frame then set the frame to the currently initialized frame
 	if ( not frame ) then
-		frame = getglobal(GLUEDROPDOWNMENU_INIT_MENU);
+		frame = _G[GLUEDROPDOWNMENU_INIT_MENU];
 	end
 
 	button:SetPoint("TOPLEFT", button:GetParent(), "TOPLEFT", xPos, yPos);
@@ -292,17 +304,17 @@ function GlueDropDownMenu_AddButton(info, level)
 	-- Show the check if checked
 	if ( info.checked ) then
 		button:LockHighlight();
-		getglobal(listFrameName.."Button"..index.."Check"):Show();
+		_G[listFrameName.."Button"..index.."Check"]:Show();
 	else
 		button:UnlockHighlight();
-		getglobal(listFrameName.."Button"..index.."Check"):Hide();
+		_G[listFrameName.."Button"..index.."Check"]:Hide();
 	end
 	button.checked = info.checked;
 
 	-- If has a colorswatch, show it and vertex color it
-	local colorSwatch = getglobal(listFrameName.."Button"..index.."ColorSwatch");
+	local colorSwatch = _G[listFrameName.."Button"..index.."ColorSwatch"];
 	if ( info.hasColorSwatch ) then
-		getglobal("DropDownList"..level.."Button"..index.."ColorSwatch".."NormalTexture"):SetVertexColor(info.r, info.g, info.b);
+		_G["DropDownList"..level.."Button"..index.."ColorSwatch".."NormalTexture"]:SetVertexColor(info.r, info.g, info.b);
 		button.r = info.r;
 		button.g = info.g;
 		button.b = info.b;
@@ -321,8 +333,9 @@ function GlueDropDownMenu_Refresh(frame, useValue)
 	local button, checked, checkImage;
 	
 	-- Just redraws the existing menu
-	for i=1, GLUEDROPDOWNMENU_MAXBUTTONS do
-		button = getglobal("DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i);
+	local listFrame = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL];
+	for i=1, listFrame.maxButtons do
+		button = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i];
 		checked = nil;
 		-- See if checked or not
 		if ( GlueDropDownMenu_GetSelectedName(frame) ) then
@@ -340,7 +353,7 @@ function GlueDropDownMenu_Refresh(frame, useValue)
 		end
 
 		-- If checked show check image
-		checkImage = getglobal("DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i.."Check");
+		checkImage = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i.."Check"];
 		if ( checked ) then
 			if ( useValue ) then
 				GlueDropDownMenu_SetText(button.value, frame);
@@ -388,8 +401,10 @@ function GlueDropDownMenu_GetSelectedID(frame)
 	else
 		-- If no explicit selectedID then try to send the id of a selected value or name
 		local button;
-		for i=1, GLUEDROPDOWNMENU_MAXBUTTONS do
-			button = getglobal("DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i);
+		
+		local listFrame = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL];
+		for i=1, listFrame.maxButtons do
+			button = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i];
 			-- See if checked or not
 			if ( GlueDropDownMenu_GetSelectedName(frame) ) then
 				if ( button:GetText() == GlueDropDownMenu_GetSelectedName(frame) ) then
@@ -418,10 +433,10 @@ function GlueDropDownMenuButton_OnClick(self)
 	
 	if ( self.keepShownOnClick ) then
 		if ( self.checked ) then
-			getglobal(self:GetName().."Check"):Hide();
+			_G[self:GetName().."Check"]:Hide();
 			self.checked = nil;
 		else
-			getglobal(self:GetName().."Check"):Show();
+			_G[self:GetName().."Check"]:Show();
 			self.checked = 1;
 		end
 	else
@@ -431,7 +446,7 @@ function GlueDropDownMenuButton_OnClick(self)
 end
 
 function HideDropDownMenu(level)
-	local listFrame = getglobal("DropDownList"..level);
+	local listFrame = _G["DropDownList"..level];
 	listFrame:Hide();
 end
 
@@ -441,7 +456,7 @@ function ToggleDropDownMenu(self, level, value, dropDownFrame, anchorName, xOffs
 	end
 	GLUEDROPDOWNMENU_MENU_LEVEL = level;
 	GLUEDROPDOWNMENU_MENU_VALUE = value;
-	local listFrame = getglobal("DropDownList"..level);
+	local listFrame = _G["DropDownList"..level];
 	local listFrameName = "DropDownList"..level;
 	local tempFrame;
 	local point, relativePoint, relativeTo;
@@ -521,7 +536,7 @@ function ToggleDropDownMenu(self, level, value, dropDownFrame, anchorName, xOffs
 			listFrame:SetPoint(point, relativeTo, relativePoint, xOffset, yOffset);
 		else
 			if ( not dropDownFrame ) then
-				dropDownFrame = getglobal(GLUEDROPDOWNMENU_OPEN_MENU);
+				dropDownFrame = _G[GLUEDROPDOWNMENU_OPEN_MENU];
 			end
 			listFrame:ClearAllPoints();
 			-- If this is a dropdown button, not the arrow anchor it to itself
@@ -535,11 +550,11 @@ function ToggleDropDownMenu(self, level, value, dropDownFrame, anchorName, xOffs
 		
 		-- Change list box appearance depending on display mode
 		if ( dropDownFrame and dropDownFrame.displayMode == "MENU" ) then
-			getglobal(listFrameName.."Backdrop"):Hide();
-			getglobal(listFrameName.."MenuBackdrop"):Show();
+			_G[listFrameName.."Backdrop"]:Hide();
+			_G[listFrameName.."MenuBackdrop"]:Show();
 		else
-			getglobal(listFrameName.."Backdrop"):Show();
-			getglobal(listFrameName.."MenuBackdrop"):Hide();
+			_G[listFrameName.."Backdrop"]:Show();
+			_G[listFrameName.."MenuBackdrop"]:Hide();
 		end
 
 		GlueDropDownMenu_Initialize((dropDownFrame or self), dropDownFrame.initialize, nil, level);
@@ -597,34 +612,34 @@ function CloseDropDownMenus(level)
 		level = 1;
 	end
 	for i=level, GLUEDROPDOWNMENU_MAXLEVELS do
-		getglobal("DropDownList"..i):Hide();
+		_G["DropDownList"..i]:Hide();
 	end
 end
 
 function GlueDropDownMenu_SetWidth(width, frame)
-	getglobal(frame:GetName().."Middle"):SetWidth(width);
+	_G[frame:GetName().."Middle"]:SetWidth(width);
 	frame:SetWidth(width + 25 + 25);
-	getglobal(frame:GetName().."Text"):SetWidth(width - 25);
+	_G[frame:GetName().."Text"]:SetWidth(width - 25);
 	frame.noResize = 1;
 end
 
 function GlueDropDownMenu_SetButtonWidth(width, frame)
 	if ( width == "TEXT" ) then
-		width = getglobal(frame:GetName().."Text"):GetWidth();
+		width = _G[frame:GetName().."Text"]:GetWidth();
 	end
 	
-	getglobal(frame:GetName().."Button"):SetWidth(width);
+	_G[frame:GetName().."Button"]:SetWidth(width);
 	frame.noResize = 1;
 end
 
 
 function GlueDropDownMenu_SetText(text, frame)
-	local filterText = getglobal(frame:GetName().."Text");
+	local filterText = _G[frame:GetName().."Text"];
 	filterText:SetText(text);
 end
 
 function GlueDropDownMenu_GetText(frame)
-	local filterText = getglobal(frame:GetName().."Text");
+	local filterText = _G[frame:GetName().."Text"];
 	return filterText:GetText();
 end
 
@@ -636,17 +651,19 @@ function GlueDropDownMenu_ClearAll(frame)
 	GlueDropDownMenu_SetText("", frame);
 
 	local button, checkImage;
-	for i=1, GLUEDROPDOWNMENU_MAXBUTTONS do
-		button = getglobal("DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i);
+	
+	local listFrame = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL];
+	for i=1, listFrame.maxButtons do
+		button = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i];
 		button:UnlockHighlight();
 
-		checkImage = getglobal("DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i.."Check");
+		checkImage = _G["DropDownList"..GLUEDROPDOWNMENU_MENU_LEVEL.."Button"..i.."Check"];
 		checkImage:Hide();
 	end
 end
 
 function GlueDropDownMenu_JustifyText(justification, frame)
-	local text = getglobal(frame:GetName().."Text");
+	local text = _G[frame:GetName().."Text"];
 	text:ClearAllPoints();
 	if ( justification == "LEFT" ) then
 		text:SetPoint("LEFT", frame:GetName().."Left", "LEFT", 27, 2);
@@ -667,7 +684,7 @@ end
 
 function GlueDropDownMenu_GetCurrentDropDown(self)
 	if ( GLUEDROPDOWNMENU_OPEN_MENU ) then
-		return getglobal(GLUEDROPDOWNMENU_OPEN_MENU);
+		return _G[GLUEDROPDOWNMENU_OPEN_MENU];
 	end
 	
 	-- If no dropdown then use this
@@ -675,11 +692,11 @@ function GlueDropDownMenu_GetCurrentDropDown(self)
 end
 
 function GlueDropDownMenuButton_GetChecked(self)
-	return getglobal(self:GetName().."Check"):IsShown();
+	return _G[self:GetName().."Check"]:IsShown();
 end
 
 function GlueDropDownMenuButton_GetName(self)
-	return getglobal(self:GetName().."NormalText"):GetText();
+	return _G[self:GetName().."NormalText"]:GetText();
 end
 
 function GlueDropDownMenuButton_OpenColorPicker(self, button)
@@ -699,15 +716,15 @@ function GlueDropDownMenuButton_OpenColorPicker(self, button)
 end
 
 function GlueDropDownMenu_DisableButton(level, id)
-	getglobal("DropDownList"..level.."Button"..id):Disable();
+	_G["DropDownList"..level.."Button"..id]:Disable();
 end
 
 function GlueDropDownMenu_EnableButton(level, id)
-	getglobal("DropDownList"..level.."Button"..id):Enable();
+	_G["DropDownList"..level.."Button"..id]:Enable();
 end
 
 function GlueDropDownMenu_SetButtonText(level, id, text, colorCode)
-	local button = getglobal("DropDownList"..level.."Button"..id);
+	local button = _G["DropDownList"..level.."Button"..id];
 	if ( colorCode ) then
 		button:SetText(colorCode..text.."|r");
 	else
@@ -716,21 +733,21 @@ function GlueDropDownMenu_SetButtonText(level, id, text, colorCode)
 end
 
 function GlueDropDownMenu_DisableDropDown(dropDown)
-	local label = getglobal(dropDown:GetName().."Label");
+	local label = _G[dropDown:GetName().."Label"];
 	if ( label ) then
 		label:SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
 	end
-	getglobal(dropDown:GetName().."Text"):SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
-	getglobal(dropDown:GetName().."Button"):Disable();
+	_G[dropDown:GetName().."Text"]:SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+	_G[dropDown:GetName().."Button"]:Disable();
 	dropDown.isDisabled = 1;
 end
 
 function GlueDropDownMenu_EnableDropDown(dropDown)
-	local label = getglobal(dropDown:GetName().."Label");
+	local label = _G[dropDown:GetName().."Label"];
 	if ( label ) then
 		label:SetVertexColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
 	end
-	getglobal(dropDown:GetName().."Text"):SetVertexColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
-	getglobal(dropDown:GetName().."Button"):Enable();
+	_G[dropDown:GetName().."Text"]:SetVertexColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
+	_G[dropDown:GetName().."Button"]:Enable();
 	dropDown.isDisabled = nil;
 end

@@ -14,5 +14,5 @@ function LocalizeFrames()
 	WorldOfWarcraftRating:Show();
 
 	-- Random name button is for English only
-	CharacterCreateRandomName:Show();
+	ALLOW_RANDOM_NAME_BUTTON = true;
 end

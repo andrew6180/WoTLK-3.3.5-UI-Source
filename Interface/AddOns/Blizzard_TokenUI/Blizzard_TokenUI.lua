@@ -1,29 +1,29 @@
 UIPanelWindows["TokenFrame"] = { area = "left", pushable = 1, whileDead = 1 };
 TOKEN_BUTTON_OFFSET = 3;
-MAX_WATCHED_TOKENS = 4;
+MAX_WATCHED_TOKENS = 3;
 BACKPACK_TOKENFRAME_HEIGHT = 22;
 
 -- REMOVE ME!!!
-SlashCmdList["TOKENUI"] = function() ToggleFrame(TokenFrame) end;
+SlashCmdList["TOKENUI"] = function() ToggleCharacter("TokenFrame"); end;
 
 function TokenButton_OnLoad(self)
 	local name = self:GetName();
-	self.count = getglobal(name.."Count");
-	self.name = getglobal(name.."Name");
-	self.icon = getglobal(name.."Icon");
-	self.check = getglobal(name.."Check");
-	self.expandIcon = getglobal(name.."ExpandIcon");
-	self.categoryLeft = getglobal(name.."CategoryLeft");
-	self.categoryRight = getglobal(name.."CategoryRight");
-	self.highlight = getglobal(name.."Highlight");
-	self.stripe = getglobal(name.."Stripe");
+	self.count = _G[name.."Count"];
+	self.name = _G[name.."Name"];
+	self.icon = _G[name.."Icon"];
+	self.check = _G[name.."Check"];
+	self.expandIcon = _G[name.."ExpandIcon"];
+	self.categoryLeft = _G[name.."CategoryLeft"];
+	self.categoryRight = _G[name.."CategoryRight"];
+	self.highlight = _G[name.."Highlight"];
+	self.stripe = _G[name.."Stripe"];
 end
 
 function TokenFrame_OnLoad()
 	TokenFrameContainerScrollBar.Show = 
 		function (self)
 			TokenFrameContainer:SetWidth(299);
-			for _, button in next, getglobal("TokenFrameContainer").buttons do
+			for _, button in next, _G["TokenFrameContainer"].buttons do
 				button:SetWidth(295);
 			end
 			getmetatable(self).__index.Show(self);
@@ -48,18 +48,12 @@ function TokenFrame_OnLoad()
 	end
 end
 
+function TokenFrame_OnShow(self)
+	SetButtonPulse(CharacterFrameTab5, 0, 1);	--Stop the button pulse
+	TokenFrame_Update();
+end
+
 function TokenFrame_Update()
-	if ( not GetCVarBool("showTokenFrame") ) then
-		return;
-	end
-	
-	-- Setup honor and arena points
-	local factionGroup = UnitFactionGroup("player");
-	if ( factionGroup ) then
-		TokenFrameHonorFrameHonorIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-"..factionGroup);
-	end
-	TokenFrameHonorFrameHonor:SetText(GetHonorCurrency());
-	TokenFrameHonorFrameArena:SetText(GetArenaCurrency());
 
 	-- Setup the buttons
 	local scrollFrame = TokenFrameContainer;
@@ -67,20 +61,11 @@ function TokenFrame_Update()
 	local buttons = scrollFrame.buttons;
 	local numButtons = #buttons;
 	local numTokenTypes = GetCurrencyListSize();
-	local name, isHeader, isExpanded, isUnused, isWatched, count, icon;
+	local name, isHeader, isExpanded, isUnused, isWatched, count, extraCurrencyType, icon, itemID;
 	local button, index;
 	for i=1, numButtons do
 		index = offset+i;
-		name, isHeader, isExpanded, isUnused, isWatched, count, icon = GetCurrencyListInfo(index);
-		--[[ TEST STUFF
-		name = "test"
-		isHeader = nil;
-		isExpanded = nil;
-		isUnused = nil;
-		isWatched = nil;
-		count = 23
-		icon = "";
-		]]
+		name, isHeader, isExpanded, isUnused, isWatched, count, extraCurrencyType, icon, itemID = GetCurrencyListInfo(index);
 
 		button = buttons[i];
 		button.check:Hide();
@@ -103,12 +88,30 @@ function TokenFrame_Update()
 				button.highlight:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -3, 2);
 				button:SetText(name);
 				button.name:SetText("");
+				button.itemID = nil;
+				button.LinkButton:Hide();
 			else
 				button.categoryLeft:Hide();
 				button.categoryRight:Hide();
 				button.expandIcon:Hide();
 				button.count:SetText(count);
-				button.icon:SetTexture(icon);
+				button.extraCurrencyType = extraCurrencyType;
+				if ( extraCurrencyType == 1 ) then	--Arena points
+					button.icon:SetTexture("Interface\\PVPFrame\\PVP-ArenaPoints-Icon");
+					button.icon:SetTexCoord(0, 1, 0, 1);
+				elseif ( extraCurrencyType == 2 ) then --Honor points
+					local factionGroup = UnitFactionGroup("player");
+					if ( factionGroup ) then
+						button.icon:SetTexture("Interface\\TargetingFrame\\UI-PVP-"..factionGroup);
+						button.icon:SetTexCoord( 0.03125, 0.59375, 0.03125, 0.59375 );
+					else
+						button.icon:Hide() --We don't know their faction yet!
+						button.icon:SetTexCoord(0, 1, 0, 1);
+					end
+				else
+					button.icon:SetTexture(icon);
+					button.icon:SetTexCoord(0, 1, 0, 1);
+				end
 				if ( isWatched ) then
 					button.check:Show();
 				end
@@ -125,9 +128,12 @@ function TokenFrame_Update()
 				end
 				button:SetText("");
 				button.name:SetText(name);
+				button.itemID = itemID;
+				button.LinkButton:Show();
 			end
 			--Manage highlight
 			if ( name == TokenFrame.selectedToken ) then
+				TokenFrame.selectedID = index;
 				button:LockHighlight();
 			else
 				button:UnlockHighlight();
@@ -144,7 +150,13 @@ function TokenFrame_Update()
 	local totalHeight = numTokenTypes * (button:GetHeight()+TOKEN_BUTTON_OFFSET);
 	local displayedHeight = #buttons * (button:GetHeight()+TOKEN_BUTTON_OFFSET);
 
-	HybridScrollFrame_Update(scrollFrame, numTokenTypes, totalHeight, displayedHeight);
+	HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight);
+	
+	if ( numTokenTypes == 0 ) then
+		CharacterFrameTab5:Hide();
+	else
+		CharacterFrameTab5:Show();
+	end
 end
 
 function TokenFramePopup_CloseIfHidden()
@@ -162,33 +174,46 @@ function TokenFramePopup_CloseIfHidden()
 end
 
 function BackpackTokenFrame_Update()
-	local watchIndex = 1;
 	local watchButton;
-	local numTokenTypes = GetCurrencyListSize();
-	for i=1, numTokenTypes do
-		name, isHeader, _, _, isWatched, count, icon = GetCurrencyListInfo(i);
+	local name, count, extraCurrencyType, icon;
+	for i=1, MAX_WATCHED_TOKENS do
+		name, count, extraCurrencyType, icon, itemID = GetBackpackCurrencyInfo(i);
 		-- Update watched tokens
-		if ( isWatched and watchIndex <= MAX_WATCHED_TOKENS ) then
-			watchButton = getglobal("BackpackTokenFrameToken"..watchIndex);
-			watchButton.icon:SetTexture(icon);
-			watchButton.count:SetText("x"..count);
-			watchButton.index = i;
+		if ( name ) then
+			watchButton = _G["BackpackTokenFrameToken"..i];
+			watchButton.extraCurrencyType = extraCurrencyType;
+			if ( extraCurrencyType == 1 ) then	--Arena points
+				watchButton.icon:SetTexture("Interface\\PVPFrame\\PVP-ArenaPoints-Icon");
+				watchButton.icon:SetTexCoord(0, 1, 0, 1);
+			elseif ( extraCurrencyType == 2 ) then --Honor points
+				local factionGroup = UnitFactionGroup("player");
+				if ( factionGroup ) then
+					watchButton.icon:SetTexture("Interface\\TargetingFrame\\UI-PVP-"..factionGroup);
+					watchButton.icon:SetTexCoord( 0.03125, 0.59375, 0.03125, 0.59375 );
+				else
+					watchButton.icon:SetTexCoord(0, 1, 0, 1);
+				end
+			else
+				watchButton.icon:SetTexture(icon);
+				watchButton.icon:SetTexCoord(0, 1, 0, 1);
+			end
+			if ( count <= 99999 ) then
+				watchButton.count:SetText(count);
+			else
+				watchButton.count:SetText("*");
+			end
 			watchButton:Show();
-			watchIndex = watchIndex+1;
+			BackpackTokenFrame.shouldShow = 1;
+			BackpackTokenFrame.numWatchedTokens = i;
+			watchButton.itemID = itemID;
+		else
+			_G["BackpackTokenFrameToken"..i]:Hide();
+			if ( i == 1 ) then
+				BackpackTokenFrame.shouldShow = nil;
+			end
+			_G["BackpackTokenFrameToken"..i].itemID = nil;
 		end
 	end
-	-- Hide unhidden token buttons
-	for i=watchIndex, MAX_WATCHED_TOKENS do
-		getglobal("BackpackTokenFrameToken"..i):Hide();
-	end
-	if ( watchIndex == 1 ) then
-		-- No tokens are being watched so hide the backpack bar
-		BackpackTokenFrame.shouldShow = nil;
-	else
-		-- Tokens are shown so show the backpack bar
-		BackpackTokenFrame.shouldShow = 1;
-	end
-	BackpackTokenFrame.numWatchedTokens = watchIndex-1;
 end
 
 function GetNumWatchedTokens()
@@ -196,7 +221,7 @@ function GetNumWatchedTokens()
 		-- No count yet so get it
 		BackpackTokenFrame_Update();
 	end
-	return BackpackTokenFrame.numWatchedTokens;
+	return BackpackTokenFrame.numWatchedTokens or 0;
 end
 
 function BackpackTokenFrame_IsShown()
@@ -208,7 +233,8 @@ function ManageBackpackTokenFrame(backpack)
 		backpack = GetBackpackFrame();
 	end
 	if ( not backpack ) then
-		-- If still no backpack then don't worry about it
+		-- If still no backpack then we don't show the frame
+		BackpackTokenFrame:Hide();
 		return;
 	end
 	if ( BackpackTokenFrame_IsShown() ) then
@@ -235,6 +261,7 @@ function TokenButton_OnClick(self)
 			TokenFrame.selectedID = self.index;
 			if ( self.isWatched ) then
 				SetCurrencyBackpack(TokenFrame.selectedID, 0);
+				self.isWatched = false;
 			else
 				-- Set an error message if trying to show too many quests
 				if ( GetNumWatchedTokens() >= MAX_WATCHED_TOKENS ) then
@@ -242,6 +269,10 @@ function TokenButton_OnClick(self)
 					return;
 				end
 				SetCurrencyBackpack(TokenFrame.selectedID, 1);
+				self.isWatched = true;
+			end
+			if ( TokenFrame.selectedID == self.index ) then
+				TokenFrame_UpdatePopup(self);
 			end
 			BackpackTokenFrame_Update();
 			ManageBackpackTokenFrame();
@@ -267,4 +298,16 @@ end
 function TokenFrame_UpdatePopup(button)
 	TokenFramePopupInactiveCheckBox:SetChecked(button.isUnused);
 	TokenFramePopupBackpackCheckBox:SetChecked(button.isWatched);
+end
+
+function TokenButtonLinkButton_OnClick(self, button)
+	if ( IsModifiedClick("CHATLINK") ) then
+		ChatEdit_InsertLink(select(2, GetItemInfo(self:GetParent().itemID)));
+	end
+end
+
+function BackpackTokenButton_OnClick(self, button)
+	if ( IsModifiedClick("CHATLINK") ) then
+		ChatEdit_InsertLink(select(2, GetItemInfo(self.itemID)));
+	end
 end

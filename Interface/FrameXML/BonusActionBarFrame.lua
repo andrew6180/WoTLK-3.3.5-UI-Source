@@ -8,8 +8,6 @@ POSSESS_CANCEL_SLOT = 2;
 
 function BonusActionBar_OnLoad (self)
 	self:RegisterEvent("UPDATE_BONUS_ACTIONBAR");
-	self:RegisterEvent("ACTIONBAR_SHOWGRID");
-	self:RegisterEvent("ACTIONBAR_HIDEGRID");
 	self:SetFrameLevel(self:GetFrameLevel() + 2);
 	self.mode = "none";
 	self.completed = 1;
@@ -53,7 +51,6 @@ function BonusActionBar_OnUpdate(self, elapsed)
 		else
 			self.completed = 1;
 		end
-		BonusActionBar_SetButtonTransitionState(self, nil);
 		if ( self.mode == "show" ) then
 			self:SetPoint("TOPLEFT", self:GetParent(), "BOTTOMLEFT", BONUSACTIONBAR_XPOS, BONUSACTIONBAR_YPOS);
 			self.state = "top";
@@ -69,7 +66,6 @@ end
 
 function ShowBonusActionBar (override)
 	if (( (not MainMenuBar.busy) and (not UnitHasVehicleUI("player")) ) or override) then	--Don't change while we're animating out MainMenuBar for vehicle UI
-		BonusActionBar_SetButtonTransitionState(nil);
 		if ( (BonusActionBarFrame.mode ~= "show" and BonusActionBarFrame.state ~= "top") or (not UIParent:IsShown())) then
 			BonusActionBarFrame:Show();
 			if ( BonusActionBarFrame.completed ) then
@@ -84,7 +80,6 @@ end
 function HideBonusActionBar (override)
 	if (( (not MainMenuBar.busy) and (not UnitHasVehicleUI("player")) ) or override) then	--Don't change while we're animating out MainMenuBar for vehicle UI
 		if ( (BonusActionBarFrame:IsShown()) or (not UIParent:IsShown())) then
-			BonusActionBar_SetButtonTransitionState(1);
 			if ( BonusActionBarFrame.completed ) then
 				BonusActionBarFrame.slideTimer = 0;
 			end
@@ -92,7 +87,6 @@ function HideBonusActionBar (override)
 			BonusActionBarFrame.mode = "hide";
 		end
 	end
-	
 end
 
 function BonusActionButtonUp (id)
@@ -103,27 +97,14 @@ function BonusActionButtonDown (id)
 	PetActionButtonDown(id);
 end
 
-function BonusActionBar_SetButtonTransitionState (self, state)
-	local button, icon;
-	for i=1, NUM_BONUS_ACTION_SLOTS, 1 do
-		button = getglobal("BonusActionButton"..i);
-		icon = getglobal("BonusActionButton"..i.."Icon");
-		button.inTransition = state;
-		if ( button.needsUpdate ) then
-			securecall("ActionButton_Update", button);
-			button.needsUpdate = nil;
-		end
-	end
-end
-
 function ShapeshiftBar_OnLoad (self)
 	ShapeshiftBar_Update();
 	self:RegisterEvent("PLAYER_ENTERING_WORLD");
 	self:RegisterEvent("UPDATE_SHAPESHIFT_FORMS");
 	self:RegisterEvent("UPDATE_SHAPESHIFT_USABLE");
 	self:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN");
+	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM");
 	self:RegisterEvent("UPDATE_INVENTORY_ALERTS");	-- Wha?? Still Wha...
-	self:RegisterEvent("UNIT_AURA");
 	self:RegisterEvent("ACTIONBAR_PAGE_CHANGED");
 end
 
@@ -137,12 +118,6 @@ function ShapeshiftBar_OnEvent (self, event, ...)
 			HideBonusActionBar();
 		end
 	else
-		if ( event == "UNIT_AURA" ) then
-			local unit = ...;
-			if ( unit ~= "player" ) then
-				return;
-			end
-		end
 		ShapeshiftBar_UpdateState();
 	end
 end
@@ -155,7 +130,6 @@ function ShapeshiftBar_Update ()
 			ShapeshiftBarMiddle:Hide();
 			ShapeshiftBarRight:SetPoint("LEFT", "ShapeshiftBarLeft", "LEFT", 12, 0);
 			ShapeshiftButton1:SetPoint("BOTTOMLEFT", "ShapeshiftBarFrame", "BOTTOMLEFT", 12, 3);
-
 		elseif ( numForms == 2 ) then
 			ShapeshiftBarMiddle:Hide();
 			ShapeshiftBarRight:SetPoint("LEFT", "ShapeshiftBarLeft", "RIGHT", 0, 0);
@@ -181,14 +155,14 @@ function ShapeshiftBar_UpdateState ()
 	local button, icon, cooldown;
 	local start, duration, enable;
 	for i=1, NUM_SHAPESHIFT_SLOTS do
-		button = getglobal("ShapeshiftButton"..i);
-		icon = getglobal("ShapeshiftButton"..i.."Icon");
+		button = _G["ShapeshiftButton"..i];
+		icon = _G["ShapeshiftButton"..i.."Icon"];
 		if ( i <= numForms ) then
 			texture, name, isActive, isCastable = GetShapeshiftFormInfo(i);
 			icon:SetTexture(texture);
 			
 			--Cooldown stuffs
-			cooldown = getglobal("ShapeshiftButton"..i.."Cooldown");
+			cooldown = _G["ShapeshiftButton"..i.."Cooldown"];
 			if ( texture ) then
 				cooldown:Show();
 			else
@@ -219,7 +193,6 @@ end
 
 function ShapeshiftBar_ChangeForm (id)
 	ShapeshiftBarFrame.lastSelected = id;
-	local check = 1;
 	CastShapeshiftForm(id);
 end
 
@@ -240,11 +213,6 @@ function PossessBar_OnEvent (self, event, ...)
 		else
 			HideBonusActionBar();
 		end
-	elseif ( event == "UNIT_AURA" ) then
-		local unit = ...;
-		if ( unit == "player" ) then
-			PossessBar_UpdateState();
-		end
 	end
 end
 
@@ -253,10 +221,12 @@ function PossessBar_Update (override)
 		if ( IsPossessBarVisible() ) then
 			PossessBarFrame:Show();
 			ShapeshiftBarFrame:Hide();
+			ShowPetActionBar(true);
 		else
 			PossessBarFrame:Hide();
 			if(GetNumShapeshiftForms() > 0) then
 				ShapeshiftBarFrame:Show();
+				ShowPetActionBar(true);
 			end
 		end
 		PossessBar_UpdateState();
@@ -265,19 +235,19 @@ function PossessBar_Update (override)
 end
 
 function PossessBar_UpdateState ()
-	local texture, name;
+	local texture, name, enabled;
 	local button, background, icon, cooldown;
 
 	for i=1, NUM_POSSESS_SLOTS do
 		-- Possess Icon
-		button = getglobal("PossessButton"..i);
-		background = getglobal("PossessBackground"..i);
-		icon = getglobal("PossessButton"..i.."Icon");
+		button = _G["PossessButton"..i];
+		background = _G["PossessBackground"..i];
+		icon = _G["PossessButton"..i.."Icon"];
 		texture, name, enabled = GetPossessInfo(i);
 		icon:SetTexture(texture);
 
 		--Cooldown stuffs
-		cooldown = getglobal("PossessButton"..i.."Cooldown");
+		cooldown = _G["PossessButton"..i.."Cooldown"];
 		cooldown:Hide();
 
 		button:SetChecked(nil);

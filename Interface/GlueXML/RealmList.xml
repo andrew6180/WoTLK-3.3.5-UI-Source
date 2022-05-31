@@ -218,12 +218,12 @@
 		</Layers>
 		<Scripts>
 			<OnLoad>
-				getglobal(self:GetName().."PVP"):SetPoint("LEFT", self:GetName().."NormalText", "RIGHT", 10, 0);
+				_G[self:GetName().."PVP"]:SetPoint("LEFT", self:GetName().."NormalText", "RIGHT", 10, 0);
 			</OnLoad>
 			<OnEnter>
 				if (self.major) then
 					GlueTooltip_SetOwner(self, nil, -50, 0);
-					GlueTooltip_SetText(self.major.."."..self.minor.."."..self.revision.."  "..self.build);
+					GlueTooltip_SetText(self.major.."."..self.minor.."."..self.revision.."  "..self.build.." Type: "..self.type);
 				end
 			</OnEnter>
 			<OnLeave>
@@ -377,7 +377,7 @@
 								SortRealms("name");
 							</OnClick>
 							<OnEnter>
-								GlueTooltip_SetOwner(self, nil, -50, 0);
+								GlueTooltip_SetOwner(self, nil, -325, 0);
 								GlueTooltip_SetText(REALMLIST_REALMNAME_TOOLTIP);
 							</OnEnter>
 							<OnLeave>
@@ -401,7 +401,7 @@
 								SortRealms("mode");
 							</OnClick>
 							<OnEnter>
-								GlueTooltip_SetOwner(self, nil, -50, 0);
+								GlueTooltip_SetOwner(self, nil, -200, 0);
 								GlueTooltip_SetText(REALMLIST_TYPE_TOOLTIP);
 							</OnEnter>
 							<OnLeave>
@@ -425,7 +425,7 @@
 								SortRealms("characters");
 							</OnClick>
 							<OnEnter>
-								GlueTooltip_SetOwner(self, nil, -50, 0);
+								GlueTooltip_SetOwner(self, nil, -165, 0);
 								GlueTooltip_SetText(REALMLIST_NUMCHARACTERS_TOOLTIP);
 							</OnEnter>
 							<OnLeave>
@@ -449,7 +449,7 @@
 								SortRealms("load");
 							</OnClick>
 							<OnEnter>
-								GlueTooltip_SetOwner(self, nil, -180, 0);
+								GlueTooltip_SetOwner(self, nil, -280, 0);
 								GlueTooltip_SetText(REALMLIST_POPULATION_TOOLTIP);
 							</OnEnter>
 							<OnLeave>
@@ -467,69 +467,7 @@
 							</Anchor>
 						</Anchors>
 					</Button>
-					<Button name="RealmListTab2" inherits="RealmListTabButtonTemplate" id="2">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab1" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-					<Button name="RealmListTab3" inherits="RealmListTabButtonTemplate" id="3">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab2" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-					<Button name="RealmListTab4" inherits="RealmListTabButtonTemplate" id="4">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab3" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-					<Button name="RealmListTab5" inherits="RealmListTabButtonTemplate" id="5">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab4" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-					<Button name="RealmListTab6" inherits="RealmListTabButtonTemplate" id="6">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab5" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-					<Button name="RealmListTab7" inherits="RealmListTabButtonTemplate" id="7">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab6" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-					<Button name="RealmListTab8" inherits="RealmListTabButtonTemplate" id="8">
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="RealmListTab7" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-15" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
+
 					<Button name="RealmListCloseButton" inherits="GlueCloseButton">
 						<Anchors>
 							<Anchor point="TOPRIGHT">
@@ -851,7 +789,7 @@
 			</OnUpdate>
 		</Scripts>
 	</Frame>
-	<Frame name="RealmHelpFrame" hidden="true" frameStrata="FULLSCREEN">
+	<Frame name="RealmHelpFrame" toplevel="true" hidden="true" frameStrata="FULLSCREEN">
 		<Size>
 			<AbsDimension x="640" y="512"/>
 		</Size>
@@ -1010,22 +948,22 @@
 				</Layers>
 				<Scripts>
 					<OnVerticalScroll>
-							local scrollbar = getglobal(self:GetName().."ScrollBar");
+							local scrollbar = _G[self:GetName().."ScrollBar"];
 							scrollbar:SetValue(offset);
 							local min;
 							local max;
 							min, max = scrollbar:GetMinMaxValues();
 							if ( offset == 0 ) then
-								getglobal(scrollbar:GetName().."ScrollUpButton"):Disable();
+								_G[scrollbar:GetName().."ScrollUpButton"]:Disable();
 							else
-								getglobal(scrollbar:GetName().."ScrollUpButton"):Enable();
+								_G[scrollbar:GetName().."ScrollUpButton"]:Enable();
 							end
 							-- HACK: scrollbars do not handle max properly
 							-- DO NOT CHANGE - without speaking to Mikros/Barris/Thompson
 							if (scrollbar:GetValue() >= max - 20) then
-								getglobal(scrollbar:GetName().."ScrollDownButton"):Disable();
+								_G[scrollbar:GetName().."ScrollDownButton"]:Disable();
 							else
-								getglobal(scrollbar:GetName().."ScrollDownButton"):Enable();
+								_G[scrollbar:GetName().."ScrollDownButton"]:Enable();
 							end
 						</OnVerticalScroll>
 				</Scripts>

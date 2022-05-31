@@ -90,9 +90,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>
-						TimeManagerCloseButton_OnClick();
-					</OnClick>
+					<OnClick function="TimeManagerCloseButton_OnClick"/>
 				</Scripts>
 			</Button>
 			<Frame name="TimeManagerStopwatchFrame">
@@ -134,9 +132,7 @@
 							</Anchor>
 						</Anchors>
 						<Scripts>
-							<OnClick>
-								TimeManagerStopwatchCheck_OnClick(self);
-							</OnClick>
+							<OnClick function="TimeManagerStopwatchCheck_OnClick"/>
 						</Scripts>
 						<NormalTexture file="Interface\Icons\INV_Misc_PocketWatch_01">
 							<Size x="28" y="28"/>
@@ -229,15 +225,9 @@
 							</Anchor>
 						</Anchors>
 						<Scripts>
-							<OnEnterPressed>
-								TimeManagerAlarmMessageEditBox_OnEnterPressed(self);
-							</OnEnterPressed>
-							<OnEscapePressed>
-								TimeManagerAlarmMessageEditBox_OnEscapePressed(self);
-							</OnEscapePressed>
-							<OnEditFocusLost>
-								TimeManagerAlarmMessageEditBox_OnEditFocusLost(self);
-							</OnEditFocusLost>
+							<OnEnterPressed function="TimeManagerAlarmMessageEditBox_OnEnterPressed"/>
+							<OnEscapePressed function="TimeManagerAlarmMessageEditBox_OnEscapePressed"/>
+							<OnEditFocusLost function="TimeManagerAlarmMessageEditBox_OnEditFocusLost"/>
 						</Scripts>
 					</EditBox>
 				</Frames>
@@ -250,9 +240,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>
-						TimeManagerAlarmEnabledButton_OnClick(self);
-					</OnClick>
+					<OnClick function="TimeManagerAlarmEnabledButton_OnClick"/>
 				</Scripts>
 			</Button>
 			<CheckButton name="TimeManagerMilitaryTimeCheck" inherits="UICheckButtonTemplate">
@@ -264,14 +252,12 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						OptionsCheckButton_SetText(self, TIMEMANAGER_24HOURMODE);
+						_G[self:GetName().."Text"]:SetText(TIMEMANAGER_24HOURMODE);
 						TimeManagerMilitaryTimeCheckText:ClearAllPoints();
 						TimeManagerMilitaryTimeCheckText:SetPoint("RIGHT", self, "RIGHT", -self:GetWidth(), 0);
 						TimeManagerMilitaryTimeCheckText:SetFontObject(GameFontHighlightSmall);
 					</OnLoad>
-					<OnClick>
-						TimeManagerMilitaryTimeCheck_OnClick(self);
-					</OnClick>
+					<OnClick function="TimeManagerMilitaryTimeCheck_OnClick"/>
 				</Scripts>
 			</CheckButton>
 			<CheckButton name="TimeManagerLocalTimeCheck" inherits="UICheckButtonTemplate">
@@ -283,35 +269,25 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						OptionsCheckButton_SetText(self, TIMEMANAGER_LOCALTIME);
+						_G[self:GetName().."Text"]:SetText(TIMEMANAGER_LOCALTIME);
 						TimeManagerLocalTimeCheckText:ClearAllPoints();
 						TimeManagerLocalTimeCheckText:SetPoint("RIGHT", self, "RIGHT", -self:GetWidth(), 0);
 						TimeManagerLocalTimeCheckText:SetFontObject(GameFontHighlightSmall);
 					</OnLoad>
-					<OnClick>
-						TimeManagerLocalTimeCheck_OnClick(self);
-					</OnClick>
+					<OnClick function="TimeManagerLocalTimeCheck_OnClick"/>
 				</Scripts>
 			</CheckButton>
 		</Frames>
 		<Scripts>
-			<OnLoad>
-				TimeManagerFrame_OnLoad(self);
-			</OnLoad>
-			<OnUpdate>
-				TimeManagerFrame_OnUpdate(self, elapsed);
-			</OnUpdate>
-			<OnShow>
-				TimeManagerFrame_OnShow(self);
-			</OnShow>
-			<OnHide>
-				TimeManagerFrame_OnHide(self);
-			</OnHide>
+			<OnLoad function="TimeManagerFrame_OnLoad"/>
+			<OnUpdate function="TimeManagerFrame_OnUpdate"/>
+			<OnShow function="TimeManagerFrame_OnShow"/>
+			<OnHide function="TimeManagerFrame_OnHide"/>
 		</Scripts>
 	</Frame>
 	<!-- Minimap button to access the TimeManagerButton -->
 	<Button name="TimeManagerClockButton" parent="Minimap" hidden="true">
-		<Size x="51" y="24"/>
+		<Size x="60" y="28"/>
 		<Anchors>
 			<Anchor point="CENTER">
 				<Offset x="0" y="-68"/>
@@ -319,13 +295,7 @@
 		</Anchors>
 		<Layers>
 			<Layer level="BORDER">
-				<Texture file="Interface\TimeManager\ClockBackground">
-					<Size x="51" y="24"/>
-					<Anchors>
-						<Anchor point="CENTER">
-							<Offset x="0" y="0"/>
-						</Anchor>
-					</Anchors>
+				<Texture file="Interface\TimeManager\ClockBackground" setAllPoints="true">
 					<TexCoords left="0.015625" right="0.8125" top="0.015625" bottom="0.390625"/>
 				</Texture>
 			</Layer>
@@ -337,65 +307,42 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<Texture name="TimeManagerAlarmFiredTexture" file="Interface\TimeManager\ClockBackground" alphaMode="ADD" hidden="true">
-					<Size x="51" y="24"/>
-					<Anchors>
-						<Anchor point="CENTER">
-							<Offset x="0" y="0"/>
-						</Anchor>
-					</Anchors>
+				<Texture name="TimeManagerAlarmFiredTexture" file="Interface\TimeManager\ClockBackground" alphaMode="ADD" hidden="true" setAllPoints="true">
 					<TexCoords left="0.015625" right="0.8125" top="0.51625" bottom="0.890625"/>
 				</Texture>
 			</Layer>
 		</Layers>
 		<Scripts>
-			<OnLoad>
-				TimeManagerClockButton_OnLoad(self);
-			</OnLoad>
-			<OnEnter>
-				TimeManagerClockButton_OnEnter(self);
-			</OnEnter>
-			<OnLeave>
-				TimeManagerClockButton_OnLeave(self);
-			</OnLeave>
-			<OnUpdate>
-				TimeManagerClockButton_OnUpdate(self, elapsed);
-			</OnUpdate>
-			<OnClick>
-				TimeManagerClockButton_OnClick(self);
-			</OnClick>
+			<OnLoad function="TimeManagerClockButton_OnLoad"/>
+			<OnEnter function="TimeManagerClockButton_OnEnter"/>
+			<OnLeave function="TimeManagerClockButton_OnLeave"/>
+			<OnUpdate function="TimeManagerClockButton_OnUpdate"/>
+			<OnClick function="TimeManagerClockButton_OnClick"/>
 		</Scripts>
 	</Button>
 	<!-- Stopwatch -->
 	<Frame name="StopwatchFrame" toplevel="true" parent="UIParent" movable="true" enableMouse="true" hidden="true" clampedToScreen="true" frameStrata="DIALOG">
-		<Size x="130" y="48"/>
+		<Size x="132" y="44"/>
 		<Anchors>
 			<Anchor point="TOPRIGHT">
 				<Offset x="-250" y="-300"/>
 			</Anchor>
 		</Anchors>
-		<HitRectInsets>
-			<AbsInset left="3" right="-12" top="-10" bottom="8"/>
-		</HitRectInsets>
 		<Layers>
 			<Layer level="BACKGROUND">
 				<Texture name="$parentBackgroundLeft" file="Interface\TimeManager\TimerBackground">
-					<Size x="128" y="29"/>
+					<Size x="122" y="29"/>
 					<Anchors>
-						<Anchor point="LEFT">
-							<Offset x="0" y="0"/>
-						</Anchor>
+						<Anchor point="BOTTOMLEFT"/>
 					</Anchors>
-					<TexCoords left="0" right="1.0" top="0" bottom="0.453125"/>
+					<TexCoords left="0.046875" right="1.0" top="0" bottom="0.453125"/>
 				</Texture>
 				<Texture file="Interface\TimeManager\TimerBackground">
-					<Size x="10" y="35"/>
+					<Size x="10" y="29"/>
 					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="$parentBackgroundLeft" relativePoint="TOPRIGHT">
-							<Offset x="0" y="1"/>
-						</Anchor>
+						<Anchor point="LEFT" relativeTo="$parentBackgroundLeft" relativePoint="RIGHT"/>
 					</Anchors>
-					<TexCoords left="0" right="0.078125" top="0.453125" bottom="1"/>
+					<TexCoords left="0.0" right="0.078125" top="0.46875" bottom="0.921875"/>
 				</Texture>
 			</Layer>
 		</Layers>
@@ -403,8 +350,8 @@
 			<Frame name="StopwatchTicker">
 				<Size x="100" y="20"/>
 				<Anchors>
-					<Anchor point="RIGHT">
-						<Offset x="-41" y="-1"/>
+					<Anchor point="BOTTOMRIGHT">
+						<Offset x="-49" y="3"/>
 					</Anchor>
 				</Anchors>
 				<Layers>
@@ -448,47 +395,45 @@
 				</Layers>
 			</Frame>
 			<Frame name="StopwatchTabFrame">
-				<Size>
-					<AbsDimension x="130" y="24"/>
-				</Size>
+				<Size x="126" y="16"/>
 				<Anchors>
 					<Anchor point="TOP">
-						<Offset x="1" y="0"/>
+						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 				<Layers>
 					<Layer level="BACKGROUND">
 						<Texture name="$parentLeft" file="Interface\ChatFrame\ChatFrameTab">
-							<Size x="16" y="24"/>
+							<Size x="7" y="1"/>
 							<Anchors>
-								<Anchor point="TOPLEFT">
-									<Offset>
-										<AbsDimension x="7" y="13"/>
-									</Offset>
-								</Anchor>
+								<Anchor point="LEFT"/>
+								<Anchor point="TOP"/>
+								<Anchor point="BOTTOM"/>
 							</Anchors>
-							<TexCoords left="0.0" right="0.25" top="0.0" bottom="1.0"/>
+							<TexCoords left="0.03125" right="0.140625" top="0.28125" bottom="1.0"/>
 						</Texture>
 						<Texture name="$parentMiddle" file="Interface\ChatFrame\ChatFrameTab">
-							<Size x="98" y="24"/>
+							<Size x="112" y="1"/>
 							<Anchors>
 								<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT"/>
+								<Anchor point="TOP"/>
+								<Anchor point="BOTTOM"/>
 							</Anchors>
-							<TexCoords left="0.25" right="0.75" top="0.0" bottom="1.0"/>
+							<TexCoords left="0.140625" right="0.859375" top="0.28125" bottom="1.0"/>
 						</Texture>
 						<Texture name="$parentRight" file="Interface\ChatFrame\ChatFrameTab">
-							<Size x="16" y="24"/>
+							<Size x="7" y="1"/>
 							<Anchors>
 								<Anchor point="LEFT" relativeTo="$parentMiddle" relativePoint="RIGHT"/>
+								<Anchor point="TOP"/>
+								<Anchor point="BOTTOM"/>
 							</Anchors>
-							<TexCoords left="0.75" right="1.0" top="0.0" bottom="1.0"/>
+							<TexCoords left="0.859375" right="0.96875" top="0.28125" bottom="1.0"/>
 						</Texture>
 						<FontString name="StopwatchTitle" text="STOPWATCH_TITLE" inherits="GameFontNormalSmall" justifyH="CENTER">
 							<Anchors>
 								<Anchor point="TOP">
-									<Offset>
-										<AbsDimension x="3" y="2"/>
-									</Offset>
+									<Offset x="0" y="-3"/>
 								</Anchor>
 							</Anchors>
 						</FontString>
@@ -498,14 +443,12 @@
 					<Button name="StopwatchCloseButton" inherits="UIPanelCloseButton">
 						<Size x="20" y="20"/>
 						<Anchors>
-							<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
-								<Offset x="5" y="6"/>
+							<Anchor point="TOPRIGHT">
+								<Offset x="1" y="1"/>
 							</Anchor>
 						</Anchors>
 						<Scripts>
-							<OnClick>
-								StopwatchCloseButton_OnClick();
-							</OnClick>
+							<OnClick function="StopwatchCloseButton_OnClick"/>
 						</Scripts>
 					</Button>
 				</Frames>
@@ -513,20 +456,16 @@
 			<Button name="StopwatchResetButton">
 				<Size x="24" y="24"/>
 				<Anchors>
-					<Anchor point="RIGHT">
-						<Offset x="5" y="0"/>
+					<Anchor point="BOTTOMRIGHT">
+						<Offset x="-2" y="3"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnEnter>
 						GameTooltip_AddNewbieTip(self, nil, 1.0, 1.0, 1.0, NEWBIE_TOOLTIP_STOPWATCH_RESETBUTTON, 1);
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
-					<OnClick>
-						StopwatchResetButton_OnClick();
-					</OnClick>
+					<OnLeave function="GameTooltip_Hide"/>
+					<OnClick function="StopwatchResetButton_OnClick"/>
 				</Scripts>
 				<NormalTexture file="Interface\TimeManager\ResetButton"/>
 				<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD"/>
@@ -542,45 +481,23 @@
 					<OnEnter>
 						GameTooltip_AddNewbieTip(self, nil, 1.0, 1.0, 1.0, NEWBIE_TOOLTIP_STOPWATCH_PLAYPAUSEBUTTON, 1);
 					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
-					<OnClick>
-						StopwatchPlayPauseButton_OnClick(self);
-					</OnClick>
+					<OnLeave function="GameTooltip_Hide"/>
+					<OnClick function="StopwatchPlayPauseButton_OnClick"/>
 				</Scripts>
 				<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up"/>
 				<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD"/>
 			</Button>
 		</Frames>
 		<Scripts>
-			<OnLoad>
-				StopwatchFrame_OnLoad(self);
-			</OnLoad>
-			<OnEvent>
-				StopwatchFrame_OnEvent(self, event, ...);
-			</OnEvent>
-			<OnUpdate>
-				StopwatchFrame_OnUpdate(self);
-			</OnUpdate>
-			<OnShow>
-				StopwatchFrame_OnShow(self);
-			</OnShow>
-			<OnHide>
-				StopwatchFrame_OnHide(self);
-			</OnHide>
-			<OnMouseDown>
-				StopwatchFrame_OnMouseDown(self);
-			</OnMouseDown>
-			<OnMouseUp>
-				StopwatchFrame_OnMouseUp(self);
-			</OnMouseUp>
-			<OnDragStart>
-				StopwatchFrame_OnDragStart(self);
-			</OnDragStart>
-			<OnDragStop>
-				StopwatchFrame_OnDragStop(self);
-			</OnDragStop>
+			<OnLoad function="StopwatchFrame_OnLoad"/>
+			<OnEvent function="StopwatchFrame_OnEvent"/>
+			<OnUpdate function="StopwatchFrame_OnUpdate"/>
+			<OnShow function="StopwatchFrame_OnShow"/>
+			<OnHide function="StopwatchFrame_OnHide"/>
+			<OnMouseDown function="StopwatchFrame_OnMouseDown"/>
+			<OnMouseUp function="StopwatchFrame_OnMouseUp"/>
+			<OnDragStart function="StopwatchFrame_OnDragStart"/>
+			<OnDragStop function="StopwatchFrame_OnDragStop"/>
 		</Scripts>
 	</Frame>
 </Ui>

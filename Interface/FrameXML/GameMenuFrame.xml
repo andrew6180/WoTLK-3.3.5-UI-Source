@@ -1,6 +1,5 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
-	<Script file="UIParent.lua"/>
 	<Frame name="GameMenuFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent">
 		<Size>
 			<AbsDimension x="195" y="240"/>
@@ -56,7 +55,8 @@
 				<Scripts>
 					<OnClick>
 						PlaySound("igMainMenuOption");
-						ShowUIPanel(OptionsFrame);
+						ShowUIPanel(VideoOptionsFrame);
+						VideoOptionsFrame.lastFrame = GameMenuFrame;
 					</OnClick>
 				</Scripts>
 			</Button>
@@ -71,7 +71,8 @@
 				<Scripts>
 					<OnClick>
 						PlaySound("igMainMenuOption");
-						ToggleAudioOption("SoundOptionsFrame");
+						ShowUIPanel(AudioOptionsFrame);
+						AudioOptionsFrame.lastFrame = GameMenuFrame;
 					</OnClick>
 				</Scripts>
 			</Button>
@@ -129,6 +130,7 @@
 					<OnClick>
 						PlaySound("igMainMenuOption");
 						KeyBindingFrame_LoadUI();
+						KeyBindingFrame.mode = 1;
 						ShowUIPanel(KeyBindingFrame);
 					</OnClick>
 				</Scripts>

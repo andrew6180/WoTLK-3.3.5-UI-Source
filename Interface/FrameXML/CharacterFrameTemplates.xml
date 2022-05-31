@@ -2,7 +2,7 @@
 ..\FrameXML\UI.xsd">
     <Button name="CharacterFrameTabButtonTemplate" virtual="true">
         <Size>
-            <AbsDimension x="115" y="32"/>
+            <AbsDimension x="10" y="32"/>
         </Size>
         <Layers>
         	<Layer level="BACKGROUND">
@@ -76,10 +76,13 @@
 			</OnClick>
 			<OnShow>
 				PanelTemplates_TabResize(self, 0);
-				getglobal(self:GetName().."HighlightTexture"):SetWidth(self:GetTextWidth() + 30);
+				CharacterFrame_TabBoundsCheck(self);
 			</OnShow>
 		</Scripts>
 		<ButtonText name="$parentText">
+			<Size>
+				<AbsDimension x="0" y="10"/>
+			</Size>
 			<Anchors>
 				<Anchor point="CENTER">
 					<Offset>

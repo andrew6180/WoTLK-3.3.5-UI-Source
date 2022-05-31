@@ -25,10 +25,13 @@ function ComboFrame_Update()
 			UIFrameFadeIn(ComboFrame, COMBOFRAME_FADE_IN);
 		end
 
-		local fadeInfo = {};
+		
 		for i=1, MAX_COMBO_POINTS do
-			comboPointHighlight = getglobal("ComboPoint"..i.."Highlight");
-			comboPointShine = getglobal("ComboPoint"..i.."Shine");
+			local fadeInfo = {};
+			comboPoint = _G["ComboPoint" .. i];
+			comboPoint:Show();
+			comboPointHighlight = _G["ComboPoint"..i.."Highlight"];
+			comboPointShine = _G["ComboPoint"..i.."Shine"];
 			if ( i <= comboPoints ) then
 				if ( i > COMBO_FRAME_LAST_NUM_POINTS ) then
 					-- Fade in the highlight and set a function that triggers when it is done fading
@@ -39,6 +42,9 @@ function ComboFrame_Update()
 					UIFrameFade(comboPointHighlight, fadeInfo);
 				end
 			else
+				if ( ENABLE_COLORBLIND_MODE == "1" ) then
+					comboPoint:Hide();
+				end
 				comboPointHighlight:SetAlpha(0);
 				comboPointShine:SetAlpha(0);
 			end

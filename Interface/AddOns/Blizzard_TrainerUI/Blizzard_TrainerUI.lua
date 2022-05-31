@@ -1,5 +1,7 @@
 
 CLASS_TRAINER_SKILLS_DISPLAYED = 11;
+CLASS_TRAINER_SKILL_SUBTEXT_WIDTH = 210
+CLASS_TRAINER_SKILL_NOSUBTEXT_WIDTH = 270
 CLASS_TRAINER_SKILL_HEIGHT = 16;
 MAX_LEARNABLE_PROFESSIONS = 2;
 
@@ -57,6 +59,7 @@ end
 
 function ClassTrainerFrame_OnLoad(self)
 	self:RegisterEvent("TRAINER_UPDATE");
+	self:RegisterEvent("TRAINER_DESCRIPTION_UPDATE");
 	ClassTrainerDetailScrollFrame.scrollBarHideable = 1;
 end
 
@@ -67,6 +70,8 @@ function ClassTrainerFrame_OnEvent(self, event, ...)
 	if ( event == "TRAINER_UPDATE" ) then
 		ClassTrainer_SelectFirstLearnableSkill();
 		ClassTrainerFrame_Update();
+	elseif ( event == "TRAINER_DESCRIPTION_UPDATE" ) then
+		ClassTrainer_SetSelection(GetTrainerSelectionIndex());
 	end
 end
 
@@ -108,7 +113,7 @@ function ClassTrainerFrame_Update()
 	-- Fill in the skill buttons
 	for i=1, CLASS_TRAINER_SKILLS_DISPLAYED, 1 do
 		local skillIndex = i + skillOffset;
-		local skillButton = getglobal("ClassTrainerSkill"..i); 
+		local skillButton = _G["ClassTrainerSkill"..i]; 
 		local serviceName, serviceSubText, serviceType, isExpanded;
 		local moneyCost, cpCost1, cpCost2;
 		if ( skillIndex <= numTrainerServices ) then	
@@ -120,29 +125,34 @@ function ClassTrainerFrame_Update()
 			if ( ClassTrainerListScrollFrame:IsShown() ) then
 				skillButton:SetWidth(293);
 			else
-				skillButton:SetWidth(323);
+				skillButton:SetWidth(313);
 			end
-			local skillSubText = getglobal("ClassTrainerSkill"..i.."SubText");
+			local skillSubText = _G["ClassTrainerSkill"..i.."SubText"];
+			local skillText = _G["ClassTrainerSkill"..i.."Text"];
 			-- Type stuff
 			if ( serviceType == "header" ) then
 				skillButton:SetText(serviceName);
 				skillButton:SetNormalFontObject(GameFontNormalLeft);
 				skillSubText:Hide();
+				skillText:SetWidth(CLASS_TRAINER_SKILL_NOSUBTEXT_WIDTH);
 				if ( isExpanded ) then
 					skillButton:SetNormalTexture("Interface\\Buttons\\UI-MinusButton-Up");
 				else
 					skillButton:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up");
 				end
-				getglobal("ClassTrainerSkill"..i.."Highlight"):SetTexture("Interface\\Buttons\\UI-PlusButton-Hilight");
+				_G["ClassTrainerSkill"..i.."Highlight"]:SetTexture("Interface\\Buttons\\UI-PlusButton-Hilight");
 			else
 				skillButton:SetNormalTexture("");
-				getglobal("ClassTrainerSkill"..i.."Highlight"):SetTexture("");
+				_G["ClassTrainerSkill"..i.."Highlight"]:SetTexture("");
 				skillButton:SetText("  "..serviceName);
 				if ( serviceSubText and serviceSubText ~= "" ) then
 					skillSubText:SetFormattedText(PARENS_TEMPLATE, serviceSubText);
-					skillSubText:SetPoint("LEFT", "ClassTrainerSkill"..i.."Text", "RIGHT", 10, 0);
+					skillText:SetWidth(CLASS_TRAINER_SKILL_SUBTEXT_WIDTH);
+					skillSubText:ClearAllPoints();
+					skillSubText:SetPoint("RIGHT", skillButton, "RIGHT", -2, 0);
 					skillSubText:Show();
 				else
+					skillText:SetWidth(CLASS_TRAINER_SKILL_NOSUBTEXT_WIDTH);
 					skillSubText:Hide();
 				end
 				
@@ -398,7 +408,7 @@ function ClassTrainer_SetSubTextColor(button, r, g, b)
 	button.r = r;
 	button.g = g;
 	button.b = b;
-	getglobal(button:GetName().."SubText"):SetTextColor(r, g, b);
+	_G[button:GetName().."SubText"]:SetTextColor(r, g, b);
 end
 
 function ClassTrainerCollapseAllButton_OnClick(self)

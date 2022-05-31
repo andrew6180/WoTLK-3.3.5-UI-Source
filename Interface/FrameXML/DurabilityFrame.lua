@@ -12,7 +12,6 @@ INVENTORY_ALERT_STATUS_SLOTS[10] = {slot ="Shield", showSeparate = 1};
 INVENTORY_ALERT_STATUS_SLOTS[11] = {slot ="Ranged", showSeparate = 1};
 
 INVENTORY_ALERT_COLORS = {};
-INVENTORY_ALERT_COLORS[0] = nil;
 INVENTORY_ALERT_COLORS[1] = {r = 1, g = 0.82, b = 0.18};
 INVENTORY_ALERT_COLORS[2] = {r = 0.93, g = 0.07, b = 0.07};
 
@@ -20,7 +19,7 @@ function DurabilityFrame_SetAlerts()
 	local numAlerts = 0;
 	local texture, color, showDurability;
 	for index, value in pairs(INVENTORY_ALERT_STATUS_SLOTS) do
-		texture = getglobal("Durability"..value.slot);
+		texture = _G["Durability"..value.slot];
 		if ( value.slot == "Shield" ) then
 			if ( OffhandHasWeapon() ) then
 				DurabilityShield:Hide();
@@ -50,14 +49,14 @@ function DurabilityFrame_SetAlerts()
 	for index, value in pairs(INVENTORY_ALERT_STATUS_SLOTS) do
 		if ( not value.showSeparate ) then
 			if ( showDurability ) then
-				getglobal("Durability"..value.slot):Show();
+				_G["Durability"..value.slot]:Show();
 			else
-				getglobal("Durability"..value.slot):Hide();
+				_G["Durability"..value.slot]:Hide();
 			end
 		end
 	end
 
-	if ( numAlerts > 0 ) then
+	if ( numAlerts > 0 and (not VehicleSeatIndicator:IsShown()) and ((not ArenaEnemyFrames) or (not ArenaEnemyFrames:IsShown())) ) then
 		DurabilityFrame:Show();
 	else
 		DurabilityFrame:Hide();

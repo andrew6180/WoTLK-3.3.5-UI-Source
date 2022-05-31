@@ -34,22 +34,22 @@ function RealmListUpdate()
 	local name, numCharacters, invalidRealm, currentRealm, pvp, rp, load, locked;
 	local realmIndex;
 	local pvpText, loadText, isFull;
-	local major, minor, revision, build;
+	local major, minor, revision, build, type;
 
 	RealmListOkButton:Disable();
 	RealmListHighlight:Hide();
 	for i=1, MAX_REALMS_DISPLAYED, 1 do
 		realmIndex = RealmList.offset + i;
-		local button = getglobal("RealmListRealmButton"..i);
+		local button = _G["RealmListRealmButton"..i];
 		if ( realmIndex > numRealms ) then
 			button:Hide();
 		else
-			name, numCharacters, invalidRealm, realmDown, currentRealm, pvp, rp, load, locked, major, minor, revision, build = GetRealmInfo(RealmList.selectedCategory, realmIndex);
+			name, numCharacters, invalidRealm, realmDown, currentRealm, pvp, rp, load, locked, major, minor, revision, build, type = GetRealmInfo(RealmList.selectedCategory, realmIndex);
 
 			if ( not name ) then
 				button:Hide();
 			else
-				pvpText = getglobal("RealmListRealmButton"..i.."PVP");
+				pvpText = _G["RealmListRealmButton"..i.."PVP"];
 				if ( pvp and rp ) then
 					pvpText:SetText(RPPVP_PARENTHESES);
 					pvpText:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
@@ -65,7 +65,7 @@ function RealmListUpdate()
 				end
 
 				isFull = nil;
-				loadText = getglobal("RealmListRealmButton"..i.."Load");
+				loadText = _G["RealmListRealmButton"..i.."Load"];
 				
 				if ( realmDown ) then
 					loadText:SetText(REALM_DOWN);
@@ -99,12 +99,13 @@ function RealmListUpdate()
 					button.minor = minor;
 					button.revision = revision;
 					button.build = build;
+					button.type = type;
 					button:SetText(name.." ("..major.."."..minor.."."..revision..")");
 				else
 					button:SetText(name);
 				end
 
-				players = getglobal("RealmListRealmButton"..i.."Players");
+				players = _G["RealmListRealmButton"..i.."Players"];
 				if ( numCharacters > 0 ) then
 					players:SetText("("..numCharacters..")");
 				else
@@ -215,7 +216,12 @@ function RealmList_UpdateTabs(...)
 	local numTabs = select("#", ...);
 	local tab;
 	for i=1, MAX_REALM_CATEGORY_TABS do
-		tab = getglobal("RealmListTab"..i);
+		tab = _G["RealmListTab"..i];
+		if ( not tab ) then
+			tab = CreateFrame("Button", "RealmListTab"..i, RealmListBackground, "RealmListTabButtonTemplate");
+			tab:SetID(i);
+			tab:SetPoint("LEFT", "RealmListTab"..(i-1), "RIGHT", -15, 0);
+		end
 		tab.disabled = nil;
 		if ( numTabs == 1 ) then
 			tab:Hide();
@@ -296,7 +302,7 @@ end
 
 function RealmListScrollFrame_OnVerticalScroll(self, offset)
 	RealmList.refreshTime = RealmListUpdateRate();
-	local scrollbar = getglobal(self:GetName().."ScrollBar");
+	local scrollbar = _G[self:GetName().."ScrollBar"];
 	scrollbar:SetValue(offset);
 	RealmList.offset = floor((offset / REALM_BUTTON_HEIGHT) + 0.5);
 	RealmListUpdate();
@@ -309,7 +315,7 @@ function RealmList_OnShow(self)
 	if ( selectedCategory == 0 ) then
 		selectedCategory = 1;
 	end
-	local button = getglobal("RealmListTab"..selectedCategory);
+	local button = _G["RealmListTab"..selectedCategory];
 	if ( button ) then
 		RealmListTab_OnClick(button);
 		GlueTemplates_SetTab(RealmList, selectedCategory);
@@ -348,7 +354,7 @@ function RealmListTab_OnClick(tab)
 			GlueDialog_Show("REALM_TOURNAMENT_WARNING");
 		end
 
-		local button = getglobal("RealmListTab"..RealmList.selectedCategory);
+		local button = _G["RealmListTab"..RealmList.selectedCategory];
 		if ( button ) then
 			button:Click();
 		end
